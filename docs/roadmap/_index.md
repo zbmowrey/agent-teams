@@ -47,9 +47,9 @@ Items are prioritized using two dimensions:
 | # | Item | Category | Status | Effort |
 |---|------|----------|--------|--------|
 | 1 | [Project Bootstrap & Initialization](P1-00-project-bootstrap.md) | core-framework | ✅ | Small |
-| 2 | [Concurrent Write Safety](P1-01-concurrent-write-safety.md) | core-framework | 🔴 | Medium |
-| 3 | [State Persistence & Checkpoints](P1-02-state-persistence.md) | core-framework | 🔴 | Large |
-| 4 | [Stack Generalization](P1-03-stack-generalization.md) | core-framework | 🔴 | Medium |
+| 2 | [Concurrent Write Safety](P1-01-concurrent-write-safety.md) | core-framework | ✅ | Medium |
+| 3 | [State Persistence & Checkpoints](P1-02-state-persistence.md) | core-framework | ✅ | Large |
+| 4 | [Stack Generalization](P1-03-stack-generalization.md) | core-framework | ✅ | Medium |
 
 ### P2 — Important
 

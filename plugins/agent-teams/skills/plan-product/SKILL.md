@@ -19,14 +19,58 @@ Enable delegate mode — you coordinate, you do NOT write specs yourself.
    - `docs/specs/`
    - `docs/progress/`
    - `docs/architecture/`
-2. Read `docs/roadmap/` to understand current state
-3. Read `docs/progress/` for latest implementation status
-4. Read `docs/specs/` for existing specs
+   - `docs/stack-hints/`
+2. **Detect project stack.** Read the project root for dependency manifests (`package.json`, `composer.json`, `Gemfile`, `go.mod`, `requirements.txt`, `Cargo.toml`, `pom.xml`, etc.) to identify the tech stack. If a matching stack hint file exists at `docs/stack-hints/{stack}.md`, read it and prepend its guidance to all spawn prompts.
+3. Read `docs/roadmap/` to understand current state
+4. Read `docs/progress/` for latest implementation status
+5. Read `docs/specs/` for existing specs
+
+## Write Safety
+
+Agents working in parallel MUST NOT write to the same file. Follow these conventions:
+
+- **Progress files**: Each agent writes ONLY to `docs/progress/{feature}-{role}.md` (e.g., `docs/progress/auth-researcher.md`). Agents NEVER write to a shared progress file.
+- **Shared files**: Only the Team Lead writes to shared/index files (e.g., `docs/roadmap/` entries, `docs/specs/{feature}/spec.md`). The Team Lead aggregates agent outputs AFTER parallel work completes.
+- **Architecture files**: Each agent writes to files scoped to their concern (e.g., `docs/architecture/{feature}-data-model.md` for DBA, `docs/architecture/{feature}-system-design.md` for Architect).
+
+## Checkpoint Protocol
+
+Agents MUST write a checkpoint to their role-scoped progress file (`docs/progress/{feature}-{role}.md`) after each significant state change. This enables session recovery if context is lost.
+
+### Checkpoint File Format
+
+```yaml
+---
+feature: "feature-name"
+team: "plan-product"
+agent: "role-name"
+phase: "research"         # research | design | review | complete
+status: "in_progress"     # in_progress | blocked | awaiting_review | complete
+last_action: "Brief description of last completed action"
+updated: "ISO-8601 timestamp"
+---
+
+## Progress Notes
+
+- [HH:MM] Action taken
+- [HH:MM] Next action taken
+```
+
+### When to Checkpoint
+
+Agents write a checkpoint after:
+- Claiming a task (phase: current phase, status: in_progress)
+- Completing a deliverable (status: awaiting_review)
+- Receiving review feedback (status: in_progress, note the feedback)
+- Being blocked (status: blocked, note what's needed)
+- Completing their work (status: complete)
+
+The Team Lead reads checkpoint files to understand team state during recovery.
 
 ## Determine Mode
 
 Based on $ARGUMENTS:
-- **Empty/no args**: General review cycle. Assess roadmap health, identify gaps, reprioritize.
+- **Empty/no args**: First, scan `docs/progress/` for checkpoint files with `team: "plan-product"` and `status` of `in_progress`, `blocked`, or `awaiting_review`. If found, **resume from the last checkpoint** — re-spawn the relevant agents with their checkpoint content as context. If no incomplete checkpoints exist, proceed with a general review cycle. Assess roadmap health, identify gaps, reprioritize.
 - **"new [idea]"**: Research and spec a new feature.
 - **"review [name]"**: Deep review of an existing spec.
 - **"reprioritize"**: Full roadmap reassessment with evidence.
@@ -69,8 +113,8 @@ Create an agent team called "plan-product" with these teammates:
 2. Let Researcher and Architect/DBA work in parallel
 3. Route all outputs through the Skeptic
 4. Iterate until Skeptic approves
-5. Write final spec to `docs/specs/[feature-name]/spec.md`
-6. Update `docs/roadmap/` with new/changed items
+5. **Team Lead only**: Aggregate agent outputs and write final spec to `docs/specs/[feature-name]/spec.md`
+6. **Team Lead only**: Update `docs/roadmap/` with new/changed items
 
 ## Quality Gate
 
@@ -80,7 +124,7 @@ NO spec is published without explicit Skeptic approval. If the Skeptic has conce
 
 - **Unresponsive agent**: If any teammate becomes unresponsive or crashes, the Team Lead should re-spawn the role and re-assign any pending tasks or review requests.
 - **Skeptic deadlock**: If the Skeptic rejects the same deliverable 3 times, STOP iterating. The Team Lead escalates to the human operator with a summary of the submissions, the Skeptic's objections across all rounds, and the team's attempts to address them. The human decides: override the Skeptic, provide guidance, or abort.
-- **Context exhaustion**: If any agent's responses become degraded (repetitive, losing context), the Team Lead should summarize the current state to `docs/progress/` and re-spawn the agent with the summary as context.
+- **Context exhaustion**: If any agent's responses become degraded (repetitive, losing context), the Team Lead should read the agent's checkpoint file at `docs/progress/{feature}-{role}.md`, then re-spawn the agent with the checkpoint content as context to resume from the last known state.
 
 ## Shared Principles
 
@@ -94,7 +138,7 @@ These principles apply to **every agent on every team**. They are included in ev
 
 ### IMPORTANT — High-Value Practices
 
-4. **Minimal, clean solutions.** Write the least code that correctly solves the problem. Prefer framework-provided tools over custom implementations (the "Laravel Way" for backend). Every line of code is a liability.
+4. **Minimal, clean solutions.** Write the least code that correctly solves the problem. Prefer framework-provided tools over custom implementations — follow the conventions of the project's framework and language. Every line of code is a liability.
 5. **TDD by default.** Write the test first. Write the minimum code to pass it. Refactor. This is not optional for implementation agents.
 6. **SOLID and DRY.** Single responsibility. Open for extension, closed for modification. Depend on abstractions. Don't repeat yourself. These aren't aspirational — they're required.
 7. **Unit tests with mocks preferred.** Design backend code to be testable with mocks and avoid database overhead. Use feature/integration tests only where database interaction is the thing being tested or where they prevent regressions that unit tests cannot catch.
@@ -186,6 +230,11 @@ COMMUNICATION:
 - Send findings to product-owner and product-skeptic simultaneously
 - If you discover something urgent or surprising, message immediately — don't wait for a complete report
 - If the Architect or DBA asks for information, help them promptly
+
+WRITE SAFETY:
+- Write your findings ONLY to docs/progress/{feature}-researcher.md
+- NEVER write to shared files — only the Team Lead writes to shared/index files
+- Checkpoint after: task claimed, research started, findings ready, findings submitted, review feedback received
 ```
 
 ### Software Architect
@@ -204,7 +253,7 @@ CRITICAL RULES:
 - The Skeptic must approve your architecture before it's finalized.
 
 DESIGN PRINCIPLES:
-- Prefer the "Laravel Way" — use framework conventions and built-in tools over custom solutions
+- Follow the project's framework conventions — use framework-provided tools over custom solutions
 - SOLID principles are non-negotiable
 - Design for testability — every component should be testable with mocks
 - Consider scalability but don't over-engineer. Build for current needs with clear extension points.
@@ -222,6 +271,12 @@ COMMUNICATION:
 - Send your design to the Skeptic for review when ready
 - Message the Researcher if you need more information about existing code or constraints
 - Respond to questions from other agents promptly
+
+WRITE SAFETY:
+- Write architecture docs to files scoped to your concern (e.g., docs/architecture/{feature}-system-design.md)
+- Write progress notes ONLY to docs/progress/{feature}-architect.md
+- NEVER write to shared files — only the Team Lead writes to shared/index files
+- Checkpoint after: task claimed, design started, ADR drafted, review requested, review feedback received, design finalized
 ```
 
 ### DBA
@@ -245,7 +300,7 @@ DESIGN PRINCIPLES:
 - Foreign key constraints for data integrity
 - Soft deletes where business logic requires audit trails
 - Timestamps (created_at, updated_at) on every table
-- Follow Laravel migration conventions
+- Follow the project's database migration conventions and tooling patterns
 
 YOUR OUTPUTS:
 - Table definitions with columns, types, constraints
@@ -259,6 +314,12 @@ COMMUNICATION:
 - Send your data model to the Skeptic when ready for review
 - If you identify data integrity risks, message the Product Owner immediately
 - Respond to the Architect's questions promptly
+
+WRITE SAFETY:
+- Write data model docs to files scoped to your concern (e.g., docs/architecture/{feature}-data-model.md)
+- Write progress notes ONLY to docs/progress/{feature}-dba.md
+- NEVER write to shared files — only the Team Lead writes to shared/index files
+- Checkpoint after: task claimed, data model started, model drafted, review requested, review feedback received, model finalized
 ```
 
 ### Product Skeptic

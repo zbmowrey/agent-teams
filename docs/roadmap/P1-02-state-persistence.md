@@ -1,6 +1,6 @@
 ---
 title: "State Persistence & Checkpoints"
-status: "not_started"
+status: "complete"
 priority: "P1"
 category: "core-framework"
 effort: "large"
