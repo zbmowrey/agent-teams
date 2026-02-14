@@ -18,15 +18,58 @@ Enable delegate mode.
    - `docs/specs/`
    - `docs/progress/`
    - `docs/architecture/`
-2. Read `docs/roadmap/` to understand what features are in play
-3. Read `docs/specs/` for the target feature's spec and API contracts
-4. Read `docs/progress/` for implementation status and known issues
-5. Read `docs/architecture/` for relevant ADRs and system design
+   - `docs/stack-hints/`
+2. **Detect project stack.** Read the project root for dependency manifests (`package.json`, `composer.json`, `Gemfile`, `go.mod`, `requirements.txt`, `Cargo.toml`, `pom.xml`, etc.) to identify the tech stack. If a matching stack hint file exists at `docs/stack-hints/{stack}.md`, read it and prepend its guidance to all spawn prompts.
+3. Read `docs/roadmap/` to understand what features are in play
+4. Read `docs/specs/` for the target feature's spec and API contracts
+5. Read `docs/progress/` for implementation status and known issues
+6. Read `docs/architecture/` for relevant ADRs and system design
+
+## Write Safety
+
+Agents working in parallel MUST NOT write to the same file. Follow these conventions:
+
+- **Progress files**: Each agent writes ONLY to `docs/progress/{feature}-{role}.md` (e.g., `docs/progress/auth-security-auditor.md`). Agents NEVER write to a shared progress file.
+- **Shared files**: Only the QA Lead writes to shared/aggregated files. The QA Lead synthesizes agent outputs AFTER parallel work completes.
+
+## Checkpoint Protocol
+
+Agents MUST write a checkpoint to their role-scoped progress file (`docs/progress/{feature}-{role}.md`) after each significant state change. This enables session recovery if context is lost.
+
+### Checkpoint File Format
+
+```yaml
+---
+feature: "feature-name"
+team: "review-quality"
+agent: "role-name"
+phase: "testing"          # testing | auditing | review | complete
+status: "in_progress"     # in_progress | blocked | awaiting_review | complete
+last_action: "Brief description of last completed action"
+updated: "ISO-8601 timestamp"
+---
+
+## Progress Notes
+
+- [HH:MM] Action taken
+- [HH:MM] Next action taken
+```
+
+### When to Checkpoint
+
+Agents write a checkpoint after:
+- Claiming a task (phase: current phase, status: in_progress)
+- Completing a deliverable (status: awaiting_review)
+- Receiving review feedback (status: in_progress, note the feedback)
+- Being blocked (status: blocked, note what's needed)
+- Completing their work (status: complete)
+
+The QA Lead reads checkpoint files to understand team state during recovery.
 
 ## Determine Mode
 
 Based on $ARGUMENTS:
-- **Empty/no args**: Perform a general quality assessment of the most recently implemented feature. Spawn test-eng + ops-skeptic. Check `docs/progress/` for the latest completed implementation.
+- **Empty/no args**: First, scan `docs/progress/` for checkpoint files with `team: "review-quality"` and `status` of `in_progress`, `blocked`, or `awaiting_review`. If found, **resume from the last checkpoint** — re-spawn the relevant agents with their checkpoint content as context. If no incomplete checkpoints exist, perform a general quality assessment of the most recently implemented feature. Spawn test-eng + ops-skeptic. Check `docs/progress/` for the latest completed implementation.
 - **"security [scope]"**: Security audit of a feature or module. Spawn security-auditor + ops-skeptic.
 - **"performance [scope]"**: Performance analysis and load testing plan. Spawn test-eng + ops-skeptic.
 - **"deploy [feature]"**: Deployment readiness check. Spawn devops-eng + security-auditor + ops-skeptic.
@@ -77,8 +120,8 @@ All outputs must pass the Ops Skeptic before being considered final.
 3. Agents work in parallel on their domain-specific assessments
 4. All findings are routed through the Ops Skeptic (GATE — blocks sign-off)
 5. Agents address Ops Skeptic feedback and resubmit
-6. QA Lead synthesizes all approved findings into a quality report
-7. Quality report is written to `docs/progress/[feature]-quality.md`
+6. Each agent writes their findings to `docs/progress/{feature}-{role}.md` (their own role-scoped file)
+7. **QA Lead only**: Synthesize all approved findings into `docs/progress/{feature}-quality.md`
 
 ## Critical Rules
 
@@ -93,7 +136,7 @@ All outputs must pass the Ops Skeptic before being considered final.
 
 - **Unresponsive agent**: If any teammate becomes unresponsive or crashes, the Team Lead should re-spawn the role and re-assign any pending tasks or review requests.
 - **Skeptic deadlock**: If the Ops Skeptic rejects the same deliverable 3 times, STOP iterating. The Team Lead escalates to the human operator with a summary of the submissions, the Skeptic's objections across all rounds, and the team's attempts to address them. The human decides: override the Skeptic, provide guidance, or abort.
-- **Context exhaustion**: If any agent's responses become degraded (repetitive, losing context), the Team Lead should summarize the current state to `docs/progress/` and re-spawn the agent with the summary as context.
+- **Context exhaustion**: If any agent's responses become degraded (repetitive, losing context), the Team Lead should read the agent's checkpoint file at `docs/progress/{feature}-{role}.md`, then re-spawn the agent with the checkpoint content as context to resume from the last known state.
 
 ---
 
@@ -109,7 +152,7 @@ These principles apply to **every agent on every team**. They are included in ev
 
 ### IMPORTANT — High-Value Practices
 
-4. **Minimal, clean solutions.** Write the least code that correctly solves the problem. Prefer framework-provided tools over custom implementations (the "Laravel Way" for backend). Every line of code is a liability.
+4. **Minimal, clean solutions.** Write the least code that correctly solves the problem. Prefer framework-provided tools over custom implementations — follow the conventions of the project's framework and language. Every line of code is a liability.
 5. **TDD by default.** Write the test first. Write the minimum code to pass it. Refactor. This is not optional for implementation agents.
 6. **SOLID and DRY.** Single responsibility. Open for extension, closed for modification. Depend on abstractions. Don't repeat yourself. These aren't aspirational — they're required.
 7. **Unit tests with mocks preferred.** Design backend code to be testable with mocks and avoid database overhead. Use feature/integration tests only where database interaction is the thing being tested or where they prevent regressions that unit tests cannot catch.
@@ -212,6 +255,11 @@ COMMUNICATION:
 - If you discover a critical regression, message qa-lead IMMEDIATELY with urgency
 - If you need clarification on expected behavior, message qa-lead — don't guess
 - Respond to questions from other agents promptly
+
+WRITE SAFETY:
+- Write your findings ONLY to docs/progress/{feature}-test-eng.md
+- NEVER write to shared files — only the QA Lead writes to shared/aggregated files
+- Checkpoint after: task claimed, testing started, findings ready, findings submitted, review feedback received
 ```
 
 ### DevOps Engineer
@@ -261,6 +309,11 @@ COMMUNICATION:
 - If you discover a critical infrastructure issue (exposed secrets, missing rollback), message qa-lead IMMEDIATELY
 - Coordinate with the Security Auditor on infrastructure security concerns
 - If you need access or information about production environments, message qa-lead — don't assume
+
+WRITE SAFETY:
+- Write your findings ONLY to docs/progress/{feature}-devops-eng.md
+- NEVER write to shared files — only the QA Lead writes to shared/aggregated files
+- Checkpoint after: task claimed, review started, findings ready, findings submitted, review feedback received
 ```
 
 ### Security Auditor
@@ -312,6 +365,11 @@ COMMUNICATION:
 - Coordinate with the DevOps Engineer on infrastructure security concerns
 - If you need clarification on authentication or authorization logic, message qa-lead
 - Be thorough and precise. False positives waste time; missed vulnerabilities cost trust.
+
+WRITE SAFETY:
+- Write your findings ONLY to docs/progress/{feature}-security-auditor.md
+- NEVER write to shared files — only the QA Lead writes to shared/aggregated files
+- Checkpoint after: task claimed, audit started, findings ready, findings submitted, review feedback received
 ```
 
 ### Ops Skeptic
