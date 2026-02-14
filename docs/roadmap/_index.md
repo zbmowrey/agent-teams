@@ -55,7 +55,7 @@ Items are prioritized using two dimensions:
 
 | # | Item | Category | Status | Effort |
 |---|------|----------|--------|--------|
-| 5 | [Cost Guardrails](P2-01-cost-guardrails.md) | developer-experience | 🔴 | Medium |
+| 5 | [Cost Guardrails](P2-01-cost-guardrails.md) | developer-experience | ✅ | Medium |
 | 6 | [Skill Composability](P2-02-skill-composability.md) | new-skills | 🔴 | Large |
 | 7 | [Progress Observability](P2-03-progress-observability.md) | quality-reliability | 🔴 | Medium |
 | 8 | [Automated Testing Pipeline](P2-04-automated-testing.md) | quality-reliability | 🔴 | Large |

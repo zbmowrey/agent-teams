@@ -4,7 +4,7 @@ description: >
   Invoke the Product Team to review the roadmap, research opportunities,
   define requirements, and create implementation specs. Use when you need
   to plan new features, reprioritize the backlog, or refine existing specs.
-argument-hint: "[new <idea> | review <spec-name> | reprioritize | (empty for general review)]"
+argument-hint: "[--light] [new <idea> | review <spec-name> | reprioritize | (empty for general review)]"
 ---
 
 # Product Team Orchestration
@@ -75,6 +75,16 @@ Based on $ARGUMENTS:
 - **"review [name]"**: Deep review of an existing spec.
 - **"reprioritize"**: Full roadmap reassessment with evidence.
 
+## Lightweight Mode
+
+If `$ARGUMENTS` begins with `--light`, strip the flag and enable lightweight mode:
+- Output to user: "Lightweight mode enabled: reduced agent team. Quality gates maintained. Suitable for exploratory/draft work."
+- Researcher: spawn with model **sonnet** instead of opus
+- Software Architect: spawn with model **sonnet** instead of opus
+- DBA: do NOT spawn
+- Product Skeptic: unchanged (ALWAYS Opus)
+- All orchestration flow, quality gates, and communication protocols remain identical
+
 ## Spawn the Team
 
 Create an agent team called "plan-product" with these teammates:
@@ -115,6 +125,7 @@ Create an agent team called "plan-product" with these teammates:
 4. Iterate until Skeptic approves
 5. **Team Lead only**: Aggregate agent outputs and write final spec to `docs/specs/[feature-name]/spec.md`
 6. **Team Lead only**: Update `docs/roadmap/` with new/changed items
+7. **Team Lead only**: Write cost summary to `docs/progress/{skill}-{feature}-{timestamp}-cost-summary.md`
 
 ## Quality Gate
 

@@ -167,6 +167,28 @@ Each agent is a full context window. Token cost scales linearly with team size:
 
 Start with one team at a time. Use `/plan-product` to scope work cheaply in plan mode, then hand specs to `/build-product` for parallel implementation.
 
+### Lightweight Mode
+
+Add `--light` to any skill invocation for reduced cost:
+
+| Skill | Standard | Lightweight | Est. Savings |
+|-------|----------|-------------|--------------|
+| `/plan-product` | 5 agents (5 Opus) | 4 agents (2 Opus, 2 Sonnet) | ~56% |
+| `/build-product` | 5 agents (3 Opus, 2 Sonnet) | 5 agents (2 Opus, 3 Sonnet) | ~24%* |
+| `/review-quality` | 2-3 agents | No change | 0% |
+
+Savings are approximate, based on Opus being ~5x the cost of Sonnet per token.
+*build-product already uses Sonnet for execution agents, so the savings ceiling is lower.
+
+The Skeptic is NEVER downgraded — quality gates remain at full strength in lightweight mode.
+The Security Auditor is NEVER downgraded or removed — security analysis requires Opus-level reasoning.
+
+Examples:
+- `/plan-product --light new billing` — draft-quality planning at reduced cost
+- `/build-product --light auth` — build with Sonnet-level implementation architect
+
+Use lightweight mode for exploratory/draft work. Use standard mode for production-critical planning and implementation.
+
 ## Customization
 
 The SKILL.md files are plain markdown. To customize:

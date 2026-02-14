@@ -4,7 +4,7 @@ description: >
   Invoke the Implementation Team to build a feature from an existing spec.
   Picks up the next ready item from the roadmap if no spec is specified.
   Resumes in-progress work if any exists.
-argument-hint: "[<spec-name> | review | (empty for next item)]"
+argument-hint: "[--light] [<spec-name> | review | (empty for next item)]"
 ---
 
 # Implementation Team Orchestration
@@ -86,6 +86,15 @@ Based on $ARGUMENTS:
 - **"[spec-name]"**: Implement the named spec.
 - **"review"**: Review current implementation status and identify blockers.
 
+## Lightweight Mode
+
+If `$ARGUMENTS` begins with `--light`, strip the flag and enable lightweight mode:
+- Output to user: "Lightweight mode enabled: reduced agent team. Quality gates maintained. Suitable for exploratory/draft work."
+- Impl Architect: spawn with model **sonnet** instead of opus
+- Backend Engineer, Frontend Engineer: unchanged (already Sonnet)
+- Quality Skeptic: unchanged (ALWAYS Opus)
+- All orchestration flow, quality gates, and communication protocols remain identical
+
 ## Spawn the Team
 
 Create an agent team called "build-product" with these teammates:
@@ -127,6 +136,7 @@ Create an agent team called "build-product" with these teammates:
 5. Quality Skeptic reviews all code (GATE — blocks delivery)
 6. Each agent writes their progress notes to `docs/progress/{feature}-{role}.md` (their own role-scoped file)
 7. **Team Lead only**: Update roadmap status and write aggregated summary to `docs/progress/{feature}-summary.md`
+8. **Team Lead only**: Write cost summary to `docs/progress/{skill}-{feature}-{timestamp}-cost-summary.md`
 
 ## Critical Rules
 

@@ -1,6 +1,6 @@
 ---
 title: "Cost Guardrails"
-status: "not_started"
+status: "complete"
 priority: "P2"
 category: "developer-experience"
 effort: "medium"
