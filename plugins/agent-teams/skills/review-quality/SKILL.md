@@ -3,7 +3,7 @@ name: review-quality
 description: >
   Invoke the Quality & Operations Team for security audits, performance
   analysis, deployment readiness, or regression testing.
-argument-hint: "[security <scope> | performance <scope> | deploy <feature> | regression]"
+argument-hint: "[--light] [security <scope> | performance <scope> | deploy <feature> | regression]"
 ---
 
 # Quality & Operations Team Orchestration
@@ -75,6 +75,12 @@ Based on $ARGUMENTS:
 - **"deploy [feature]"**: Deployment readiness check. Spawn devops-eng + security-auditor + ops-skeptic.
 - **"regression"**: Full regression test sweep. Spawn test-eng + ops-skeptic.
 
+## Lightweight Mode
+
+If `$ARGUMENTS` begins with `--light`, strip the flag but make no changes to agent selection:
+- Output to user: "Lightweight mode: no changes applied. This skill is already at minimum viable configuration."
+- All agents, models, and orchestration remain identical to standard mode
+
 ## Spawn the Team
 
 Create an agent team called "review-quality" with teammates appropriate to $ARGUMENTS.
@@ -122,6 +128,7 @@ All outputs must pass the Ops Skeptic before being considered final.
 5. Agents address Ops Skeptic feedback and resubmit
 6. Each agent writes their findings to `docs/progress/{feature}-{role}.md` (their own role-scoped file)
 7. **QA Lead only**: Synthesize all approved findings into `docs/progress/{feature}-quality.md`
+8. **QA Lead only**: Write cost summary to `docs/progress/{skill}-{feature}-{timestamp}-cost-summary.md`
 
 ## Critical Rules
 
