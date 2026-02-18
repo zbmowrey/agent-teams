@@ -138,6 +138,10 @@ NO spec is published without explicit Skeptic approval. If the Skeptic has conce
 - **Skeptic deadlock**: If the Skeptic rejects the same deliverable 3 times, STOP iterating. The Team Lead escalates to the human operator with a summary of the submissions, the Skeptic's objections across all rounds, and the team's attempts to address them. The human decides: override the Skeptic, provide guidance, or abort.
 - **Context exhaustion**: If any agent's responses become degraded (repetitive, losing context), the Team Lead should read the agent's checkpoint file at `docs/progress/{feature}-{role}.md`, then re-spawn the agent with the checkpoint content as context to resume from the last known state.
 
+---
+
+<!-- BEGIN SHARED: principles -->
+<!-- Authoritative source: plan-product/SKILL.md. Keep in sync across all skills. -->
 ## Shared Principles
 
 These principles apply to **every agent on every team**. They are included in every spawn prompt.
@@ -145,7 +149,7 @@ These principles apply to **every agent on every team**. They are included in ev
 ### CRITICAL — Non-Negotiable
 
 1. **No agent proceeds past planning without Skeptic sign-off.** The Skeptic must explicitly approve plans before implementation begins. If the Skeptic has not approved, the work is blocked.
-2. **Communicate constantly via the `SendMessage` tool** (`type: 'message'` for direct messages, `type: 'broadcast'` for team-wide). Never assume another agent knows your status. When you complete a task, discover a blocker, change an approach, or need input — message immediately.
+2. **Communicate constantly via the `SendMessage` tool** (`type: "message"` for direct messages, `type: "broadcast"` for team-wide). Never assume another agent knows your status. When you complete a task, discover a blocker, change an approach, or need input — message immediately.
 3. **No assumptions.** If you don't know something, ask. Message a teammate, message the lead, or research it. Never guess at requirements, API contracts, data shapes, or business rules.
 
 ### IMPORTANT — High-Value Practices
@@ -165,28 +169,33 @@ These principles apply to **every agent on every team**. They are included in ev
 
 11. **Progressive disclosure in specs.** Start with a one-paragraph summary, then expand into details. Readers should be able to stop reading at any depth and still have a useful understanding.
 12. **Use Sonnet for execution agents, Opus for reasoning agents.** Researchers, architects, and skeptics benefit from deeper reasoning (Opus). Engineers executing well-defined specs can use Sonnet for cost efficiency.
+<!-- END SHARED: principles -->
 
+---
+
+<!-- BEGIN SHARED: communication-protocol -->
+<!-- Authoritative source: plan-product/SKILL.md. Keep in sync across all skills. -->
 ## Communication Protocol
 
 All agents follow these communication rules. This is the lifeblood of the team.
 
-> **Tool mapping:** `write(target, message)` in the table below is shorthand for the `SendMessage` tool with `type: 'message'` and `recipient: target`. `broadcast(message)` maps to `SendMessage` with `type: 'broadcast'`.
+> **Tool mapping:** `write(target, message)` in the table below is shorthand for the `SendMessage` tool with `type: "message"` and `recipient: target`. `broadcast(message)` maps to `SendMessage` with `type: "broadcast"`.
 
 ### When to Message
 
-|Event|Action|Target|
+| Event | Action | Target |
 |---|---|---|
-|Task started|`write(lead, "Starting task #N: [brief]")`|Team lead|
-|Task completed|`write(lead, "Completed task #N. Summary: [brief]")`|Team lead|
-|Blocker encountered|`write(lead, "BLOCKED on #N: [reason]. Need: [what]")`|Team lead|
-|API contract proposed|`write(counterpart, "CONTRACT PROPOSAL: [details]")`|Counterpart agent|
-|API contract accepted|`write(proposer, "CONTRACT ACCEPTED: [ref]")`|Proposing agent|
-|API contract changed|`write(all affected, "CONTRACT CHANGE: [before] → [after]. Reason: [why]")`|All affected agents|
-|Plan ready for review|`write(product-skeptic, "PLAN REVIEW REQUEST: [details or file path]")`|Product Skeptic|
-|Plan approved|`write(requester, "PLAN APPROVED: [ref]")`|Requesting agent|
-|Plan rejected|`write(requester, "PLAN REJECTED: [reasons]. Required changes: [list]")`|Requesting agent|
-|Significant discovery|`write(lead, "DISCOVERY: [finding]. Impact: [assessment]")`|Team lead|
-|Need input from peer|`write(peer, "QUESTION for [name]: [question]")`|Specific peer|
+| Task started | `write(lead, "Starting task #N: [brief]")` | Team lead |
+| Task completed | `write(lead, "Completed task #N. Summary: [brief]")` | Team lead |
+| Blocker encountered | `write(lead, "BLOCKED on #N: [reason]. Need: [what]")` | Team lead |
+| API contract proposed | `write(counterpart, "CONTRACT PROPOSAL: [details]")` | Counterpart agent |
+| API contract accepted | `write(proposer, "CONTRACT ACCEPTED: [ref]")` | Proposing agent |
+| API contract changed | `write(all affected, "CONTRACT CHANGE: [before] → [after]. Reason: [why]")` | All affected agents |
+| Plan ready for review | `write(product-skeptic, "PLAN REVIEW REQUEST: [details or file path]")` | Product Skeptic |
+| Plan approved | `write(requester, "PLAN APPROVED: [ref]")` | Requesting agent |
+| Plan rejected | `write(requester, "PLAN REJECTED: [reasons]. Required changes: [list]")` | Requesting agent |
+| Significant discovery | `write(lead, "DISCOVERY: [finding]. Impact: [assessment]")` | Team lead |
+| Need input from peer | `write(peer, "QUESTION for [name]: [question]")` | Specific peer |
 
 ### Message Format
 
@@ -198,6 +207,8 @@ Details: [1-3 sentences max]
 Action needed: [yes/no, and what]
 Blocking: [task number if applicable]
 ```
+
+<!-- END SHARED: communication-protocol -->
 
 <!-- Contract Negotiation Pattern omitted — only relevant to build-product. See build-product/SKILL.md. -->
 

@@ -156,6 +156,8 @@ Create an agent team called "build-product" with these teammates:
 
 ---
 
+<!-- BEGIN SHARED: principles -->
+<!-- Authoritative source: plan-product/SKILL.md. Keep in sync across all skills. -->
 ## Shared Principles
 
 These principles apply to **every agent on every team**. They are included in every spawn prompt.
@@ -183,9 +185,12 @@ These principles apply to **every agent on every team**. They are included in ev
 
 11. **Progressive disclosure in specs.** Start with a one-paragraph summary, then expand into details. Readers should be able to stop reading at any depth and still have a useful understanding.
 12. **Use Sonnet for execution agents, Opus for reasoning agents.** Researchers, architects, and skeptics benefit from deeper reasoning (Opus). Engineers executing well-defined specs can use Sonnet for cost efficiency.
+<!-- END SHARED: principles -->
 
 ---
 
+<!-- BEGIN SHARED: communication-protocol -->
+<!-- Authoritative source: plan-product/SKILL.md. Keep in sync across all skills. -->
 ## Communication Protocol
 
 All agents follow these communication rules. This is the lifeblood of the team.
@@ -218,7 +223,9 @@ Details: [1-3 sentences max]
 Action needed: [yes/no, and what]
 Blocking: [task number if applicable]
 ```
+<!-- END SHARED: communication-protocol -->
 
+<!-- BEGIN SKILL-SPECIFIC: communication-extras -->
 ### Contract Negotiation Pattern (Backend ↔ Frontend)
 
 This is the most critical communication pattern. When backend and frontend engineers are working on the same feature:
@@ -275,6 +282,7 @@ backend-eng                          frontend-eng
     │           contract doc."             │
     │                                      │
 ```
+<!-- END SKILL-SPECIFIC: communication-extras -->
 
 ---
 
