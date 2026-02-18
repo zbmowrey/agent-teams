@@ -28,3 +28,5 @@ These hints are automatically prepended to agent spawn prompts when a Laravel pr
 - Prefer Laravel's built-in service container, middleware, and event system.
 - Use service providers for binding interfaces to implementations.
 - Follow the standard Laravel directory structure unless there's a compelling reason to deviate.
+- Relentlessly maintain lightweight models and controllers. Business logic belongs in Services, queries belong in Repositories. 
+- Use events/listeners/observers with attributes where possible. 
