@@ -1,13 +1,13 @@
 ---
 title: "Onboarding Wizard Skill"
-status: "not_started"
+status: "complete"
 priority: "P3"
 category: "developer-experience"
 effort: "small"
 impact: "medium"
 dependencies: []
 created: "2026-02-14"
-updated: "2026-02-14"
+updated: "2026-02-19"
 ---
 
 # Onboarding Wizard Skill
@@ -30,6 +30,17 @@ New users must read the README, understand the three skills, set environment var
 - This is a single-agent skill — no team spawning, no Skeptic. It's a setup utility.
 - Must be idempotent — running it twice should not overwrite existing docs.
 - Should detect and respect existing project configuration.
+- Prerequisite: CI validator must be adapted to support `type: single-agent` SKILL.md files.
+
+## Spec
+
+See [docs/specs/onboarding-wizard/spec.md](../specs/onboarding-wizard/spec.md)
+
+## Architecture
+
+- [ADR-003: Single-Agent Skill with File-Existence Idempotency](../architecture/ADR-003-onboarding-wizard-single-agent.md)
+- [System Design](../architecture/onboarding-wizard-system-design.md)
+- [Data Model Evaluation](../architecture/onboarding-wizard-data-model.md)
 
 ## Success Criteria
 

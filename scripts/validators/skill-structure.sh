@@ -80,6 +80,12 @@ for filepath in "${skill_files[@]}"; do
     # Extract frontmatter content (lines 2 to fm_end-1)
     fm_content="$(sed -n "2,$((fm_end - 1))p" "$filepath")"
 
+    # Detect single-agent type
+    is_single_agent=0
+    if printf '%s\n' "$fm_content" | grep -q "^type:[[:space:]]*single-agent"; then
+        is_single_agent=1
+    fi
+
     # Check required fields: name, description, argument-hint
     for field in name description argument-hint; do
         if ! printf '%s\n' "$fm_content" | grep -q "^${field}:"; then
@@ -112,54 +118,69 @@ for filepath in "${skill_files[@]}"; do
     file_content="$(cat "$filepath")"
     a2_file_fail=0
 
-    # Required exact-match sections
-    required_sections=(
-        "## Setup"
-        "## Write Safety"
-        "## Checkpoint Protocol"
-        "## Determine Mode"
-        "## Lightweight Mode"
-        "## Spawn the Team"
-        "## Orchestration Flow"
-        "## Failure Recovery"
-        "## Shared Principles"
-        "## Communication Protocol"
-    )
+    if [ "$is_single_agent" -eq 1 ]; then
+        # Single-agent: only require ## Setup and ## Determine Mode
+        for section in "## Setup" "## Determine Mode"; do
+            if ! printf '%s\n' "$file_content" | grep -qF "$section"; then
+                echo "[FAIL] A2/required-sections: Missing required section"
+                echo "  File: $filepath"
+                echo "  Expected: Section heading \"$section\" present in file"
+                echo "  Found: Section heading not found"
+                echo "  Fix: Add \"$section\" heading to the file"
+                a2_fail=$((a2_fail + 1))
+                a2_file_fail=$((a2_file_fail + 1))
+            fi
+        done
+    else
+        # Multi-agent: require all standard sections
+        required_sections=(
+            "## Setup"
+            "## Write Safety"
+            "## Checkpoint Protocol"
+            "## Determine Mode"
+            "## Lightweight Mode"
+            "## Spawn the Team"
+            "## Orchestration Flow"
+            "## Failure Recovery"
+            "## Shared Principles"
+            "## Communication Protocol"
+        )
 
-    for section in "${required_sections[@]}"; do
-        if ! printf '%s\n' "$file_content" | grep -qF "$section"; then
-            echo "[FAIL] A2/required-sections: Missing required section"
+        for section in "${required_sections[@]}"; do
+            if ! printf '%s\n' "$file_content" | grep -qF "$section"; then
+                echo "[FAIL] A2/required-sections: Missing required section"
+                echo "  File: $filepath"
+                echo "  Expected: Section heading \"$section\" present in file"
+                echo "  Found: Section heading not found"
+                echo "  Fix: Add \"$section\" heading to the file"
+                a2_fail=$((a2_fail + 1))
+                a2_file_fail=$((a2_file_fail + 1))
+            fi
+        done
+
+        # At least one of: ## Critical Rules OR ## Quality Gate
+        if ! printf '%s\n' "$file_content" | grep -qF "## Critical Rules" && \
+           ! printf '%s\n' "$file_content" | grep -qF "## Quality Gate"; then
+            echo "[FAIL] A2/required-sections: Missing required section (need at least one)"
             echo "  File: $filepath"
-            echo "  Expected: Section heading \"$section\" present in file"
-            echo "  Found: Section heading not found"
-            echo "  Fix: Add \"$section\" heading to the file"
+            echo "  Expected: At least one of \"## Critical Rules\" or \"## Quality Gate\""
+            echo "  Found: Neither section heading present in file"
+            echo "  Fix: Add either \"## Critical Rules\" or \"## Quality Gate\" section to the file"
             a2_fail=$((a2_fail + 1))
             a2_file_fail=$((a2_file_fail + 1))
         fi
-    done
 
-    # At least one of: ## Critical Rules OR ## Quality Gate
-    if ! printf '%s\n' "$file_content" | grep -qF "## Critical Rules" && \
-       ! printf '%s\n' "$file_content" | grep -qF "## Quality Gate"; then
-        echo "[FAIL] A2/required-sections: Missing required section (need at least one)"
-        echo "  File: $filepath"
-        echo "  Expected: At least one of \"## Critical Rules\" or \"## Quality Gate\""
-        echo "  Found: Neither section heading present in file"
-        echo "  Fix: Add either \"## Critical Rules\" or \"## Quality Gate\" section to the file"
-        a2_fail=$((a2_fail + 1))
-        a2_file_fail=$((a2_file_fail + 1))
-    fi
-
-    # At least one of: ## Teammate Spawn Prompts OR ## Teammates to Spawn
-    if ! printf '%s\n' "$file_content" | grep -qF "## Teammate Spawn Prompts" && \
-       ! printf '%s\n' "$file_content" | grep -qF "## Teammates to Spawn"; then
-        echo "[FAIL] A2/required-sections: Missing required section (need at least one)"
-        echo "  File: $filepath"
-        echo "  Expected: At least one of \"## Teammate Spawn Prompts\" or \"## Teammates to Spawn\""
-        echo "  Found: Neither section heading present in file"
-        echo "  Fix: Add either \"## Teammate Spawn Prompts\" or \"## Teammates to Spawn\" section to the file"
-        a2_fail=$((a2_fail + 1))
-        a2_file_fail=$((a2_file_fail + 1))
+        # At least one of: ## Teammate Spawn Prompts OR ## Teammates to Spawn
+        if ! printf '%s\n' "$file_content" | grep -qF "## Teammate Spawn Prompts" && \
+           ! printf '%s\n' "$file_content" | grep -qF "## Teammates to Spawn"; then
+            echo "[FAIL] A2/required-sections: Missing required section (need at least one)"
+            echo "  File: $filepath"
+            echo "  Expected: At least one of \"## Teammate Spawn Prompts\" or \"## Teammates to Spawn\""
+            echo "  Found: Neither section heading present in file"
+            echo "  Fix: Add either \"## Teammate Spawn Prompts\" or \"## Teammates to Spawn\" section to the file"
+            a2_fail=$((a2_fail + 1))
+            a2_file_fail=$((a2_file_fail + 1))
+        fi
     fi
 
     if [ "$a2_file_fail" -eq 0 ]; then
@@ -169,6 +190,11 @@ for filepath in "${skill_files[@]}"; do
     # -------------------------------------------------------------------------
     # A3: Spawn Definitions (H3 entries under ## Spawn the Team)
     # -------------------------------------------------------------------------
+    if [ "$is_single_agent" -eq 1 ]; then
+        # Single-agent: skip A3 entirely
+        a3_pass=$((a3_pass + 1))
+    else
+
     # Extract the Spawn the Team section: from "## Spawn the Team" to next "## "
     spawn_section="$(awk '/^## Spawn the Team/{found=1; next} found && /^## /{exit} found{print}' "$filepath")"
 
@@ -252,9 +278,16 @@ for filepath in "${skill_files[@]}"; do
         fi
     fi
 
+    fi # end is_single_agent else for A3
+
     # -------------------------------------------------------------------------
     # A4: Shared Content Markers
     # -------------------------------------------------------------------------
+    if [ "$is_single_agent" -eq 1 ]; then
+        # Single-agent: skip A4 entirely
+        a4_pass=$((a4_pass + 1))
+    else
+
     a4_file_fail=0
 
     for shared_name in "principles" "communication-protocol"; do
@@ -300,6 +333,8 @@ for filepath in "${skill_files[@]}"; do
     else
         a4_fail=$((a4_fail + a4_file_fail))
     fi
+
+    fi # end is_single_agent else for A4
 done
 
 file_count="${#skill_files[@]}"

@@ -73,7 +73,7 @@ Items are prioritized using two dimensions:
 | # | Item | Category | Status | Effort |
 |---|------|----------|--------|--------|
 | 13 | [Custom Agent Roles](P3-01-custom-agent-roles.md) | new-skills | 🔴 | Large |
-| 14 | [Onboarding Wizard Skill](P3-02-onboarding-wizard.md) | developer-experience | 🔴 | Small |
+| 14 | [Onboarding Wizard Skill](P3-02-onboarding-wizard.md) | developer-experience | ✅ | Small |
 | 15 | [Architecture & Contribution Guide](P3-03-contribution-guide.md) | documentation | 🔴 | Small |
 | 16 | [Incident Triage Skill](P3-04-triage-incident.md) | new-skills | 🔴 | Medium |
 | 17 | [Tech Debt Review Skill](P3-05-review-debt.md) | new-skills | 🔴 | Medium |

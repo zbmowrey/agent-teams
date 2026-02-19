@@ -58,6 +58,34 @@ normalize_skeptic_names() {
         -e 's/Ops Skeptic/SKEPTIC_NAME/g'
 }
 
+# Build lookup of single-agent skill files (skip shared content checks for these)
+single_agent_files=()
+for f in "${skill_files[@]}"; do
+    fm_end=0
+    while IFS= read -r line; do
+        lineno="${line%%	*}"
+        content="${line#*	}"
+        if [ "$lineno" -gt 1 ] && [ "$content" = "---" ]; then
+            fm_end="$lineno"
+            break
+        fi
+    done < <(grep -n "^---$" "$f" | awk -F: '{print $1"\t"$2}')
+    if [ "$fm_end" -gt 0 ]; then
+        fm_content="$(sed -n "2,$((fm_end - 1))p" "$f")"
+        if printf '%s\n' "$fm_content" | grep -q "^type:[[:space:]]*single-agent"; then
+            single_agent_files+=("$f")
+        fi
+    fi
+done
+
+is_single_agent_file() {
+    local target="$1"
+    for f in "${single_agent_files[@]}"; do
+        [ "$f" = "$target" ] && return 0
+    done
+    return 1
+}
+
 # -------------------------------------------------------------------------
 # B1: Shared Principles — byte identity
 # -------------------------------------------------------------------------
@@ -69,6 +97,8 @@ if [ -n "$authoritative_source" ]; then
 fi
 
 for filepath in "${skill_files[@]}"; do
+    is_single_agent_file "$filepath" && continue
+
     block="$(extract_block "$filepath" "<!-- BEGIN SHARED: principles -->" "<!-- END SHARED: principles -->")"
     if [ -z "$block" ]; then
         echo "[FAIL] B1/principles-drift: Could not extract Shared Principles block"
@@ -118,6 +148,8 @@ if [ -n "$authoritative_source" ]; then
 fi
 
 for filepath in "${skill_files[@]}"; do
+    is_single_agent_file "$filepath" && continue
+
     block="$(extract_block "$filepath" "<!-- BEGIN SHARED: communication-protocol -->" "<!-- END SHARED: communication-protocol -->")"
     if [ -z "$block" ]; then
         echo "[FAIL] B2/protocol-drift: Could not extract Communication Protocol block"
