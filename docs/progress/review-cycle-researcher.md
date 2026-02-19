@@ -4,173 +4,184 @@ team: "plan-product"
 agent: "researcher"
 phase: "research"
 status: "complete"
-last_action: "Completed full investigation of all remaining P2/P3 items"
-updated: "2026-02-18T12:00:00Z"
+last_action: "Completed research report on remaining P2 candidates (P2-02, P2-03, P2-07)"
+updated: "2026-02-18T18:00:00Z"
 ---
 
-# Research Findings: P2/P3 Roadmap Prioritization
+# Research Findings: Remaining P2 Roadmap Candidates
 
 ## Summary
 
-Investigated all 7 remaining roadmap items (4 P2, 3 P3) against the current codebase state. The three SKILL.md files total 1,269 lines with ~126 lines of verbatim duplication across them. All P1 dependencies are satisfied. Identified one stale README reference and one roadmap gap not currently tracked. Recommend P2-05 Content Deduplication as the next item to spec -- it has the best effort-to-impact ratio and directly reduces operational cost on every invocation.
+Investigated the three remaining not-started P2 roadmap items against the current codebase state. Since the previous review cycle, P2-04 (Automated Testing), P2-05 (Content Deduplication), and P2-06 (Artifact Format Templates) have all been completed. The remaining candidates are P2-02 (Skill Composability), P2-03 (Progress Observability), and P2-07 (Universal Shared Principles). P2-08 (Plugin Organization) is listed but explicitly deferred until 2+ business skills exist.
 
-## Key Facts
+**Recommendation: P2-03 Progress Observability** should be the next feature to spec. It delivers the most user-facing value at the lowest effort and risk, with no dependencies or prerequisite research needed.
 
-### Current State of the Codebase
+## Current State (Facts)
 
-- **3 SKILL.md files**: plan-product (376 lines), review-quality (431 lines), build-product (462 lines). Total: 1,269 lines.
-- **Shared Principles section**: Duplicated identically in all 3 files, starts at lines 141/151/159 respectively.
-- **Communication Protocol section**: Duplicated identically in all 3 files, starts at lines 169/181/189 respectively.
-- **All P1 items complete**: project-bootstrap, concurrent-write-safety, state-persistence, stack-generalization.
-- **All completed P2 items**: cost-guardrails (P2-01), artifact-format-templates (P2-06).
-- **Stack generalization is fully done**: No hardcoded Laravel/PHP references remain in SKILL.md files. Stack hints are properly externalized.
-- **Artifact templates are in place**: `docs/specs/_template.md`, `docs/progress/_template.md`, `docs/architecture/_template.md` all exist and are referenced in Setup sections.
-- **Plugin system**: Simple plugin.json manifest with marketplace.json. No shared-file injection mechanism observed.
+### Completed Work
 
-### Stale Reference Found
+All P1 items (P1-00 through P1-03) and 4 of 8 P2 items are complete:
+- P2-01 Cost Guardrails: `--light` mode, cost summaries -- complete
+- P2-04 Automated Testing: 10 validation checks in CI via bash scripts -- complete
+- P2-05 Content Deduplication: HTML comment markers, byte-identical shared content, ADR-002 -- complete
+- P2-06 Artifact Format Templates: spec/progress/architecture templates -- complete
 
-**README.md line 199**: Still says "The default is Laravel/PHP -- adjust for your stack in the spawn prompts" -- but P1-03 Stack Generalization removed all hardcoded stack references. This is misleading.
+### Infrastructure Now Available
 
-## Item-by-Item Analysis
+Since the last review cycle, the project gained:
+1. **CI validation pipeline** (P2-04): `scripts/validate.sh` with 4 validators, GitHub Actions workflow
+2. **Content drift detection** (P2-05): Shared section markers enable automated consistency checking
+3. **Standardized templates** (P2-06): `_template.md` files in specs/, progress/, architecture/
+4. **Business skill design guidelines** (`docs/architecture/business-skill-design-guidelines.md`): Multi-skeptic assignments, consensus-building patterns, quality-without-ground-truth framework
 
-### P2-02 Skill Composability (Large effort, dependency: state-persistence DONE)
+### Remaining P2 Items
 
-**What it is**: A `/run-workflow` skill that chains plan -> build -> review with YAML workflow definitions.
+| Item | Status | Effort | Impact | Dependencies | Roadmap File Exists? |
+|------|--------|--------|--------|-------------|---------------------|
+| P2-02 Skill Composability | not_started | Large | Medium | state-persistence (done) | Yes |
+| P2-03 Progress Observability | not_started | Medium | Medium | state-persistence (done) | Yes |
+| P2-07 Universal Shared Principles | not_started | Medium | -- | -- | **No** (index only) |
+| P2-08 Plugin Organization | not_started | Medium | -- | Deferred | **No** (index only) |
 
-**Assessment**: The dependency (state-persistence) is satisfied, so this is technically unblocked. However, the current handoff between skills already works via artifact files (specs, progress, roadmap). The three skills are invoked manually, and users control timing and review between steps. Automating this chain introduces significant complexity (error recovery, mid-workflow failure, quality gate enforcement across skill boundaries) for a convenience improvement.
+### Gap: Missing Roadmap Files for P2-07 and P2-08
 
-- **Impact**: Medium. Power users may benefit, but the manual workflow is functional.
-- **Effort**: Large. Requires a new skill, a workflow definition format, handoff protocol formalization, and cross-skill error handling.
-- **Risk if deferred**: Low. Users can chain skills manually.
-- **Confidence**: High (based on direct codebase reading).
-- **Recommendation**: Defer. Not the next priority.
+The _index.md references `P2-07-universal-principles.md` and `P2-08-plugin-organization.md`, but **neither file exists**. These items were added to the index during the previous review cycle but no roadmap item files were created. This is a data integrity issue -- the _index.md links to non-existent files. The CI validator (C2/filename-convention) may not catch this since it validates existing files, not broken links.
 
-### P2-03 Progress Observability (Medium effort, dependency: state-persistence DONE)
+**Confidence**: High (verified via filesystem search).
 
-**What it is**: A status summary command and end-of-session summaries for visibility into running teams.
+---
 
-**Assessment**: The checkpoint protocol (P1-02) already writes structured progress files. The cost summary (P2-01) already writes invocation summaries. The missing piece is a cheap "read all checkpoints and summarize" command. This is largely a read-only operation -- it reads existing files and produces a consolidated view. The SKILL.md files already have a "resume from checkpoint" mechanism (empty-args mode reads checkpoint files). A status subcommand would be a lightweight extension.
+## Candidate Analysis
 
-- **Impact**: Medium-high. Users currently have no way to check team progress without reading individual checkpoint files. The tmux pane approach is available but chaotic for 5 agents.
-- **Effort**: Small-medium. It's mostly reading and summarizing existing files. Could be a new argument mode in existing skills or a standalone utility.
-- **Risk if deferred**: Low-medium. Users manage without it, but visibility gaps reduce trust in the system.
-- **Confidence**: High.
-- **Recommendation**: Moderate priority. Worth doing but not the most impactful next step.
+### P2-03 Progress Observability -- RECOMMENDED
 
-### P2-04 Automated Testing Pipeline (Large effort, no dependencies)
+**What it solves**: Users have no consolidated view of team progress during skill runs. They must either watch individual tmux panes (chaotic with 5 agents) or manually read checkpoint files in `docs/progress/`. There is no "status" command.
 
-**What it is**: Structural validation scripts for SKILL.md files, contract tests for shared content consistency, CI integration.
+**What already exists (partially implemented)**:
+- Checkpoint protocol in all 3 SKILL.md files (agents write structured YAML-frontmatter progress files)
+- Cost summary writing at end of sessions (P2-01)
+- Progress template (`docs/progress/_template.md`) from P2-06
+- Resume-from-checkpoint logic in all 3 skills' "Determine Mode" sections (empty-args scans for incomplete checkpoints)
 
-**Assessment**: This is fundamentally important for project health, but the project is still young (3 SKILL.md files, ~14 roadmap items). The risk of undetected regressions is real but manageable at the current scale. The artifact-format-templates (P2-06) already created structured formats with YAML frontmatter that would be testable. The content deduplication item (P2-05) would significantly change what needs testing -- doing testing first means rewriting tests after dedup.
+**What's missing**:
+1. A `status` argument mode in each skill's "Determine Mode" section
+2. Summarization logic that reads all `docs/progress/{feature}-*.md` files and produces a consolidated view
+3. Formalized end-of-session summary format
 
-- **Impact**: High for long-term quality. Low for immediate user value.
-- **Effort**: Large. Requires markdown/YAML parsing, cross-file consistency checks, CI setup.
-- **Risk if deferred**: Medium. Manual review has worked so far, but errors become more likely as the codebase grows.
-- **Confidence**: High.
-- **Recommendation**: Important but should follow P2-05. Doing dedup first means fewer test targets and more stable content to validate.
+**Effort assessment**: **Small-medium** (downgraded from "medium" in the roadmap).
+- The checkpoint infrastructure already exists -- this is a read-and-summarize operation
+- No new file formats needed -- reads existing checkpoint YAML frontmatter
+- No agent spawning for the status command -- single-agent read-only operation
+- Changes to 3 SKILL.md files (add a mode to Determine Mode section)
+- The end-of-session summary is partially implemented already (build-product step 7 mentions `{feature}-summary.md`)
 
-### P2-05 Content Deduplication (Medium effort, no dependencies)
+**Impact assessment**: **Medium-high**.
+- Every user benefits on every invocation -- visibility into what agents are doing
+- Reduces anxiety during long-running skill sessions (5 Opus agents can run for several minutes)
+- Enables informed decisions about when to interrupt/restart
+- The end-of-session summary improves session-to-session continuity
+- Low effort means high value-per-effort ratio
 
-**What it is**: Extract the ~126 lines of duplicated Shared Principles and Communication Protocol from 3 SKILL.md files into a single authoritative location.
+**Risk**: Low. Additive changes only. No architectural decisions needed. No platform research required.
 
-**Assessment**: This is the highest-impact, most actionable item remaining. The duplication is verifiably present (confirmed by line-by-line analysis). Each skill invocation loads one SKILL.md into every agent's context -- with 5 Opus agents on `/plan-product`, that's 5x the duplicated content across the team. Eliminating ~126 lines per file reduces per-invocation token cost and eliminates the maintenance burden of syncing 3 copies.
+**Confidence**: High (based on direct reading of all 3 SKILL.md files and checkpoint infrastructure).
 
-The roadmap item identifies three approaches:
-1. Extract to CLAUDE.md (ideal -- agents inherit it automatically)
-2. Extract to a shared reference file (requires SKILL.md to reference it)
-3. Validated duplication via CI (pragmatic fallback)
+### P2-02 Skill Composability -- DEFER
 
-Based on my investigation, there is no shared-file injection mechanism in the plugin system (plugin.json is a simple manifest). However, CLAUDE.md is loaded into every Claude Code conversation automatically. If the shared content is in a project-level CLAUDE.md, agents get it without per-skill duplication. This is a real, achievable path.
+**What it solves**: Automates the plan-build-review pipeline into a single command.
 
-**Key consideration**: The README notes that SKILL.md files should be self-contained for portability. Option 1 (CLAUDE.md) works for projects that use the plugin, but a standalone SKILL.md copied to another project would lose the shared principles. The spec should address this tradeoff.
+**Assessment update since last cycle**: No changes to the fundamental analysis. The previous architect assessment identified a **potential showstopper**: Claude Code's skill/plugin system may not support one skill programmatically invoking another. This research question remains unanswered. Additionally:
 
-- **Impact**: High. Direct token cost savings on every invocation. Eliminates maintenance burden. Reduces SKILL.md complexity.
-- **Effort**: Medium. Well-defined scope -- the content to extract is known, the destination is clear.
-- **Risk if deferred**: Medium. Every edit to shared principles requires 3 manual edits. Divergence risk increases over time.
-- **Confidence**: High.
-- **Recommendation**: This should be the NEXT item to spec. Best effort-to-impact ratio.
+- The manual workflow (user invokes skills sequentially) continues to work fine
+- The handoff already works via artifact files (specs, progress, roadmap)
+- The business skill design guidelines (new since last cycle) add more skill variants, increasing the combinatorial complexity of workflow definitions
+- No user has reported the manual workflow as a pain point (inference: low confidence, no user feedback mechanism exists)
 
-### P3-01 Custom Agent Roles (Large effort, dependency: stack-generalization DONE)
+**Effort**: Large. Unchanged. Requires:
+1. Platform research on skill-to-skill invocation
+2. New SKILL.md file for `/run-workflow`
+3. YAML workflow definition format
+4. Handoff protocol formalization
+5. Cross-skill error handling and state management
 
-**What it is**: Allow users to define custom agent roles (e.g., Data Engineer, ML Engineer) without editing SKILL.md files.
+**Impact**: Medium. Convenience feature for power users. Manual workflow is functional.
 
-**Assessment**: Dependency satisfied. However, the current agent roles cover the most common SaaS development scenarios well. This is a power-user feature that adds significant complexity to the skill orchestration system -- skills would need to discover, parse, and compose teams from external role definitions at runtime. The spawn prompts in SKILL.md are already ~50 lines per role, tightly integrated with the orchestration flow.
+**Risk**: High. Platform constraint may make the feature infeasible as designed.
 
-- **Impact**: Medium for niche users. Most users are well-served by the default roles.
-- **Effort**: Large. Significant SKILL.md refactoring, new file format, dynamic team composition logic.
-- **Risk if deferred**: Low. Users who need custom roles can edit SKILL.md directly (README documents this).
-- **Confidence**: High.
-- **Recommendation**: Defer. High effort, niche impact.
+**Recommendation**: Defer. Research the platform question as a prerequisite, potentially as a standalone investigation rather than a full spec cycle. If skill-to-skill invocation isn't supported, re-scope to a "next step guide" pattern (each skill writes guidance about what to invoke next).
 
-### P3-02 Onboarding Wizard (Small effort, no dependencies)
+**Confidence**: High on effort/risk assessment. Low on whether the platform constraint is real (would need hands-on testing with Claude Code's API).
 
-**What it is**: A `/setup-project` skill that auto-detects stack, creates docs structure, and writes a starter CLAUDE.md.
+### P2-07 Universal Shared Principles -- NEEDS SCOPING
 
-**Assessment**: The existing skills already handle directory creation in their Setup sections (Step 1 in every SKILL.md creates docs directories if missing). The onboarding wizard would front-load this setup and add CLAUDE.md generation. This becomes more valuable if P2-05 (deduplication) puts shared principles in CLAUDE.md -- the onboarding wizard could generate the CLAUDE.md with the right shared content.
+**What it solves**: The current Shared Principles (12 items across 4 tiers) are engineering-focused. The business skill design guidelines document (`docs/architecture/business-skill-design-guidelines.md`) establishes separate quality standards for business skills (assumptions & limitations, confidence levels, falsification triggers, external validation checkpoints). P2-07 would unify these into a single principle set that works across all domains.
 
-- **Impact**: Medium for new users. Low for existing users.
-- **Effort**: Small. Single-agent skill with no team spawning.
-- **Risk if deferred**: Low. Existing Setup sections handle the basics.
-- **Confidence**: Medium. Value depends on P2-05 outcome.
-- **Recommendation**: Consider after P2-05 lands, especially if shared principles move to CLAUDE.md.
+**What exists today**:
+- Engineering-focused Shared Principles in all 3 SKILL.md files (12 numbered items)
+- Business skill design guidelines in `docs/architecture/business-skill-design-guidelines.md` (skeptic enforcement checklist, consensus-building patterns, mandatory output requirements)
+- ADR-002's validated duplication strategy with the 8-skill revision trigger
 
-### P3-03 Contribution Guide (Small effort, no dependencies)
+**The problem with doing this now**:
+1. **No business skills exist yet**. The principles would be designed in a vacuum without real-world validation. The previous architect assessment noted: "one universal principle set + domain appendices is better than two separate principle sets." But without building even one business skill, we don't know which principles are truly universal vs. domain-specific.
+2. **No roadmap file exists**. P2-07 has an _index.md entry but no `P2-07-universal-principles.md` with problem statement, proposed solution, or success criteria. It needs basic scoping before it can be specced.
+3. **The 8-skill trigger hasn't been reached**. ADR-002 set an explicit threshold: revisit content duplication strategy at 8+ skills. We currently have 3 skills. Generalizing principles before hitting that threshold is premature.
 
-**What it is**: Architecture overview and step-by-step instructions for contributors.
+**Effort**: Medium. But the effort is speculative -- without a roadmap file defining scope, the real effort is unknown.
 
-**Assessment**: Useful for open-source adoption but not blocking any functionality. The existing README covers usage well. The ADR-001 and roadmap index provide some architectural context. A full contribution guide would be most valuable after the codebase stabilizes -- doing it now means rewriting it after dedup and testing changes.
+**Impact**: Medium for future skills. Zero for current skills (they already have working principles).
 
-- **Impact**: Low-medium. Useful for contributors, not for end users.
-- **Effort**: Small. Documentation-only.
-- **Risk if deferred**: Low. The project is still in active development; premature documentation will need updates.
-- **Confidence**: High.
-- **Recommendation**: Defer until P2-05 and P2-04 are done. Write it when the architecture is stable.
+**Risk**: Medium. Risk of premature abstraction -- designing universal principles before any business skill validates them.
 
-## Identified Gaps
+**Recommendation**: Create the roadmap file to define scope, but defer the spec work until at least one business skill (e.g., P3-10 /plan-sales) is built. Use the first business skill as a test case for which principles are truly universal.
 
-### Gap 1: Stale README Content
+**Confidence**: Medium. The architectural direction (universal + appendices) seems sound, but the timing is premature.
 
-README.md line 199 says "The default is Laravel/PHP -- adjust for your stack in the spawn prompts" but stack generalization (P1-03) removed all hardcoded references. This should be corrected to describe the stack-hints system.
+### P2-08 Plugin Organization -- CORRECTLY DEFERRED
 
-**Recommendation**: Fix as a cleanup task (not a roadmap item). Small, isolated change.
+The _index.md explicitly states: "Defer plugin organization until 2+ business skills are built and validated." This is the right call. Zero business skills exist today. No further analysis needed.
 
-### Gap 2: No Error Recovery Testing
+---
 
-The 3 SKILL.md files all have "Failure Recovery" sections (unresponsive agent, skeptic deadlock, context exhaustion), but there's no evidence these recovery paths have been exercised. This is adjacent to P2-04 (automated testing) but distinct -- it's about validating the behavioral contracts, not structural integrity.
+## Gaps and Issues Not in the Roadmap
 
-**Recommendation**: Note this as a sub-concern of P2-04 when it's specced. Not a separate roadmap item.
+### Gap 1: Missing Roadmap Files for P2-07 and P2-08
 
-### Gap 3: Plugin Versioning Strategy
+As noted above, both items appear in _index.md but have no corresponding roadmap files. This means:
+- The CI validator (C1/required-fields) cannot validate their frontmatter
+- The _index.md links are broken
+- Anyone reading the roadmap sees a reference to a non-existent file
 
-The plugin.json and marketplace.json both hardcode version "1.0.0". There's no versioning strategy for when SKILL.md changes break backward compatibility (e.g., if dedup changes how shared principles are loaded). Users who pinned to a version would get stuck on old skills.
+**Recommendation**: Create stub roadmap files with `not_started` status and basic problem statements. This is a cleanup task, not a spec cycle.
 
-**Recommendation**: Consider adding a lightweight versioning note to the contribution guide (P3-03). Not urgent enough for a standalone roadmap item.
+### Gap 2: Stale README Content (Persists from Last Cycle)
+
+The previous researcher flagged README.md line 199 referencing hardcoded Laravel/PHP, which was removed in P1-03. This remains unfixed.
+
+**Recommendation**: Fix as a minor cleanup task.
+
+### Gap 3: No User Feedback Mechanism
+
+All prioritization is based on team analysis, not user input. There's no issue tracker, feedback form, or usage telemetry. This limits confidence in impact assessments -- we're inferring user pain points, not measuring them.
+
+**Recommendation**: Not a roadmap item. Note it as a limitation of the prioritization process.
+
+---
 
 ## Recommended Priority Ordering
 
-Based on effort, impact, dependencies, and sequencing logic:
-
 | Rank | Item | Rationale |
 |------|------|-----------|
-| 1 | **P2-05 Content Deduplication** | Best effort-to-impact. Reduces cost, eliminates maintenance burden. No dependencies. Should be done before testing (P2-04) to stabilize what's being tested. |
-| 2 | **P2-04 Automated Testing Pipeline** | Important for project health. Should follow dedup so tests validate the final structure. |
-| 3 | **P2-03 Progress Observability** | Quality-of-life improvement. Well-scoped, medium effort. |
-| 4 | **P3-02 Onboarding Wizard** | Small effort, good synergy with P2-05 if shared principles move to CLAUDE.md. |
-| 5 | **P2-02 Skill Composability** | Large effort, convenience feature. Manual workflow works. |
-| 6 | **P3-03 Contribution Guide** | Write after architecture stabilizes. |
-| 7 | **P3-01 Custom Agent Roles** | Large effort, niche impact. Defer. |
+| **1** | **P2-03 Progress Observability** | Lowest effort, highest readiness, most user-facing value. No research needed. Builds on existing checkpoint infrastructure. |
+| 2 | P2-07 Universal Shared Principles | Create the roadmap file now; defer spec until first business skill validates the approach. |
+| 3 | P2-02 Skill Composability | Requires platform research before speccing. High effort, uncertain feasibility. |
+| 4 | P2-08 Plugin Organization | Correctly deferred until 2+ business skills exist. |
 
-## Recommendation: Next Item to Spec
+### Why P2-03 Over P2-07
 
-**P2-05 Content Deduplication** should be specced next. It has:
-- The best effort-to-impact ratio among remaining items
-- No blocking dependencies
-- A clear, well-defined scope (the duplicated content is known and measurable)
-- Positive sequencing effects (stabilizes structure for P2-04 testing, enables P3-02 onboarding)
-- Direct cost savings on every skill invocation
+The previous cycle recommended P2-05 -> P2-07 -> P2-04. P2-05 and P2-04 are now done. The previous ordering placed P2-07 before P2-03, but the rationale was "generalize principles for multi-domain expansion." Now that the business skill design guidelines document exists (separate from the SKILL.md shared principles), the urgency of P2-07 has decreased -- there's already a reference document for business skill quality standards. P2-03, meanwhile, delivers immediate value to every user on every invocation, has the lowest implementation risk, and requires no research or architectural decisions.
 
 ## Open Questions
 
-1. Does Claude Code's CLAUDE.md loading work for plugin-installed projects, or only for repos with a CLAUDE.md committed to the project root? This affects whether Option 1 (extract to CLAUDE.md) is viable for all users.
-2. Should the portability constraint (SKILL.md being self-contained) be relaxed for plugin-installed users? The plugin marketplace already implies a dependency on the plugin infrastructure.
-3. Is there appetite for a "P2-05.5" item that fixes the stale README content, or should it be bundled with the next implementation cycle?
+1. Should P2-07 and P2-08 roadmap files be created as part of this cycle or tracked as a separate cleanup task?
+2. Is there interest in building a business skill (e.g., P3-10 /plan-sales) as a "pathfinder" to validate the universal principles approach before speccing P2-07?
+3. For P2-03: should the status command be a new argument mode in existing skills, or a standalone utility/skill?

@@ -4,7 +4,7 @@ description: >
   Invoke the Product Team to review the roadmap, research opportunities,
   define requirements, and create implementation specs. Use when you need
   to plan new features, reprioritize the backlog, or refine existing specs.
-argument-hint: "[--light] [new <idea> | review <spec-name> | reprioritize | (empty for general review)]"
+argument-hint: "[--light] [status | new <idea> | review <spec-name> | reprioritize | (empty for general review)]"
 ---
 
 # Product Team Orchestration
@@ -71,6 +71,7 @@ The Team Lead reads checkpoint files to understand team state during recovery.
 ## Determine Mode
 
 Based on $ARGUMENTS:
+- **"status"**: Read all checkpoint files for this skill and generate a consolidated status report. Do NOT spawn any agents. Read `docs/progress/` files with `team: "plan-product"` in their frontmatter, parse their YAML metadata, and output a formatted status summary. If no checkpoint files exist for this skill, report "No active or recent sessions found."
 - **Empty/no args**: First, scan `docs/progress/` for checkpoint files with `team: "plan-product"` and `status` of `in_progress`, `blocked`, or `awaiting_review`. If found, **resume from the last checkpoint** — re-spawn the relevant agents with their checkpoint content as context. If no incomplete checkpoints exist, proceed with a general review cycle. Assess roadmap health, identify gaps, reprioritize.
 - **"new [idea]"**: Research and spec a new feature.
 - **"review [name]"**: Deep review of an existing spec.
@@ -127,6 +128,7 @@ Create an agent team called "plan-product" with these teammates:
 5. **Team Lead only**: Aggregate agent outputs and write final spec to `docs/specs/[feature-name]/spec.md`
 6. **Team Lead only**: Update `docs/roadmap/` with new/changed items
 7. **Team Lead only**: Write cost summary to `docs/progress/{skill}-{feature}-{timestamp}-cost-summary.md`
+8. **Team Lead only**: Write end-of-session summary to `docs/progress/{feature}-summary.md` using the format from `docs/progress/_template.md`. Include: what was accomplished, what remains, blockers encountered, and whether the feature is complete or in-progress. If the session is interrupted before completion, still write a partial summary noting the interruption point.
 
 ## Quality Gate
 

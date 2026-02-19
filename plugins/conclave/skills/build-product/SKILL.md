@@ -4,7 +4,7 @@ description: >
   Invoke the Implementation Team to build a feature from an existing spec.
   Picks up the next ready item from the roadmap if no spec is specified.
   Resumes in-progress work if any exists.
-argument-hint: "[--light] [<spec-name> | review | (empty for next item)]"
+argument-hint: "[--light] [status | <spec-name> | review | (empty for next item)]"
 ---
 
 # Implementation Team Orchestration
@@ -83,6 +83,7 @@ The Team Lead reads checkpoint files to understand team state during recovery.
 ## Determine Mode
 
 Based on $ARGUMENTS:
+- **"status"**: Read all checkpoint files for this skill and generate a consolidated status report. Do NOT spawn any agents. Read `docs/progress/` files with `team: "build-product"` in their frontmatter, parse their YAML metadata, and output a formatted status summary. If no checkpoint files exist for this skill, report "No active or recent sessions found."
 - **Empty/no args**: Scan `docs/progress/` for checkpoint files with `team: "build-product"` and `status` of `in_progress`, `blocked`, or `awaiting_review`. If found, **resume from the last checkpoint** — re-spawn the relevant agents with their checkpoint content as context and pick up where they left off. If no incomplete checkpoints exist, pick next ready roadmap item.
 - **"[spec-name]"**: Implement the named spec.
 - **"review"**: Review current implementation status and identify blockers.
@@ -136,7 +137,7 @@ Create an agent team called "build-product" with these teammates:
 4. Backend + Frontend implement in parallel, communicating frequently
 5. Quality Skeptic reviews all code (GATE — blocks delivery)
 6. Each agent writes their progress notes to `docs/progress/{feature}-{role}.md` (their own role-scoped file)
-7. **Team Lead only**: Update roadmap status and write aggregated summary to `docs/progress/{feature}-summary.md`
+7. **Team Lead only**: Update roadmap status and write aggregated summary to `docs/progress/{feature}-summary.md` using the format from `docs/progress/_template.md`. Include: what was accomplished, what remains, blockers encountered, and whether the feature is complete or in-progress. If the session is interrupted before completion, still write a partial summary noting the interruption point.
 8. **Team Lead only**: Write cost summary to `docs/progress/{skill}-{feature}-{timestamp}-cost-summary.md`
 
 ## Critical Rules

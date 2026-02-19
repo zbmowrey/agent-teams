@@ -2,222 +2,154 @@
 feature: "review-cycle"
 team: "plan-product"
 agent: "architect"
-phase: "complete"
+phase: "review"
 status: "complete"
-last_action: "Architecture assessment approved by Skeptic with notes"
-updated: "2026-02-18T17:00:00Z"
+last_action: "Completed technical assessment of remaining P2 candidates (P2-02, P2-03, P2-07)"
+updated: "2026-02-18"
 ---
 
-# Architecture Assessment: Remaining P2 Items
+# Technical Assessment: Remaining P2 Roadmap Candidates
 
-## Overview
+## Executive Summary
 
-Assessment of the four remaining P2 roadmap items (P2-02 through P2-05) from an architectural perspective. The analysis covers complexity, risk, dependencies, implementation readiness, and recommended approach for each item.
+After reading all three SKILL.md files, both ADRs, the full validation pipeline (4 validators, 10 checks), and all progress files, my assessment is that **P2-03 (Progress Observability)** has the best effort-to-value ratio. It builds almost entirely on existing infrastructure, requires minimal new components, and the roadmap's "medium" effort estimate is possibly generous. P2-02 (Skill Composability) is genuinely large and carries a potential showstopper architectural risk. P2-07 (Universal Shared Principles) is premature at 3 skills given that ADR-002 explicitly defers extraction to the 8-skill threshold.
 
-### Current System Architecture
-
-The Council of Wizards project is a Claude Code plugin consisting of:
-- **3 SKILL.md files** (~375-465 lines each) that orchestrate multi-agent teams
-- **Plugin structure**: `plugins/conclave/` with a `.claude-plugin/plugin.json` manifest
-- **Documentation system**: `docs/` with `roadmap/`, `specs/`, `progress/`, `architecture/`, `stack-hints/` directories
-- **No executable code**: The entire system is markdown-driven orchestration instructions consumed by Claude Code's agent framework
-
-Key architectural characteristics:
-- Skills are self-contained markdown documents with YAML frontmatter
-- Agent coordination is file-based: agents write to role-scoped progress files, leads aggregate
-- Quality gates are enforced by Skeptic agents (never bypassed)
-- State persistence uses checkpoint files in `docs/progress/`
-- Shared Principles (~50 lines) and Communication Protocol (~50 lines) are duplicated across all 3 SKILL.md files
+**Context**: P1-00 through P1-03, P2-01, P2-04, P2-05, P2-06 are all complete. The remaining P2 candidates are P2-02, P2-03, and P2-07 (P2-08 is explicitly deferred per roadmap note).
 
 ---
 
-## P2-02: Skill Composability
+## Candidate 1: P2-02 Skill Composability (Large)
 
-**Effort**: Large | **Impact**: Medium | **Dependencies**: state-persistence (P1-02, complete)
+### What Already Exists
 
-### Architectural Complexity: HIGH
+- **Checkpoint protocol** (all 3 SKILL.md files): Structured YAML frontmatter checkpoints with `feature`, `team`, `agent`, `phase`, `status`, `last_action`, `updated`. This is the natural handoff mechanism between workflow steps.
+- **Session recovery** (all 3 "Determine Mode" sections): Each skill already scans `docs/progress/` for incomplete checkpoints and resumes. This is primitive workflow state management.
+- **Implicit handoff contracts**: `docs/specs/{feature}/spec.md` (plan output / build input) and `docs/progress/{feature}-summary.md` (session output) already serve as step I/O contracts by convention.
+- **Quality gates**: Skeptic approval is non-negotiable in every skill. A workflow engine must respect these.
 
-This is the most architecturally complex remaining item. It introduces a new abstraction layer:
+### What Needs to Be Built
 
-**Components required:**
-1. A new `/run-workflow` skill (new SKILL.md file)
-2. A workflow definition format (YAML files in `docs/workflows/`)
-3. A handoff protocol formalizing the data contract between skill outputs and inputs
-4. Workflow state tracking (which step is current, outcomes of prior steps)
+1. **Workflow definition format**: YAML files in `docs/workflows/` defining step sequences (skill name, arguments, success condition, quality gate requirements).
+2. **Workflow orchestrator skill** (`/run-workflow`): New SKILL.md that reads definitions and invokes skills sequentially. Must handle step completion detection, error pausing, context passing, and Skeptic gate enforcement.
+3. **Handoff contract formalization**: The implicit convention (plan writes spec, build reads spec) must become a documented, reliable interface.
+4. **New validator**: Workflow definition schema validator extending `scripts/validate.sh`.
 
-**Interactions:**
-- The workflow skill must invoke existing skills sequentially. In Claude Code's plugin model, this means the workflow orchestrator agent must trigger skill execution for each step. The mechanism for one skill to programmatically invoke another skill within Claude Code is not clearly documented.
-- Each step's Skeptic must still operate independently -- the workflow cannot suppress quality gates.
-- Error states (Skeptic rejection, agent crash, context exhaustion) must pause the workflow with resumable state.
+### Complexity Assessment
 
-### Risk Assessment: HIGH
+The roadmap says **Large**. I agree -- possibly underestimated. The fundamental challenge is not orchestration logic but **skill-to-skill invocation**. Each skill invocation is a separate Claude Code session. There is no documented mechanism for one skill to programmatically invoke another skill. Skills are triggered by user slash commands, not by other skills.
 
-1. **Platform constraint risk**: Claude Code's plugin/skill system may not support skill-to-skill invocation. If skills can only be triggered by user input (slash commands), a `/run-workflow` skill cannot programmatically call `/plan-product` then `/build-product`. This is a potential showstopper that requires platform research.
-2. **Context window risk**: A workflow orchestrator that monitors multiple sequential skill invocations will accumulate enormous context. Five Opus agents per step, across 3 steps, could exhaust context.
-3. **Complexity ceiling**: The roadmap correctly notes "keep workflows simple (linear sequences)." Even linear workflows introduce substantial state management. Conditional branching should remain firmly out of scope.
-4. **Quality gate integrity**: If the workflow auto-advances past a Skeptic gate, the core quality guarantee is broken.
+This is a potential **showstopper**: if the Claude Code plugin framework doesn't support skill chaining, the entire feature must be re-scoped to a "manual workflow checklist" pattern (skill writes "next step" guidance, user invokes manually).
 
-### Implementation Readiness: LOW
+### Architectural Risks
 
-The roadmap description is conceptually sound but lacks critical platform-level answers:
-- Can a skill invoke another skill programmatically?
-- How does workflow state persist across skill invocations (each skill invocation may be a fresh context)?
-- What is the handoff data contract format?
+1. **Skill-to-skill invocation gap**: No existing mechanism. May require framework changes outside project scope.
+2. **State consistency across sessions**: If a skill crashes mid-execution, checkpoint files may be inconsistent. Recovery logic for a multi-step workflow is substantially harder than single-skill recovery.
+3. **Scope creep**: Linear workflows are tractable. Users will immediately want conditional branching, parallel steps, retry logic.
+4. **Testing difficulty**: Multi-session workflow orchestration is very difficult to validate with the bash-based pipeline.
 
-**Needs research** before speccing: A focused investigation into Claude Code's plugin API capabilities for skill chaining.
+### Effort-to-Value: LOW
 
-### Recommended Approach
-
-1. **Defer** until P2-03 (Progress Observability) and P2-05 (Content Deduplication) are complete -- both provide infrastructure this feature benefits from.
-2. **Research first**: Before speccing, investigate Claude Code's mechanism for one skill to trigger another. If not supported, re-scope to a "manual workflow checklist" pattern (skill writes "next step" guidance, user invokes manually).
-3. **Start with handoff protocol only**: Even without a workflow skill, formalizing the data contract between plan-product output and build-product input is independently valuable and low-risk.
+Genuinely Large+ effort, medium impact, significant architectural risk with a potential showstopper. Needs platform research before even speccing.
 
 ---
 
-## P2-03: Progress Observability
+## Candidate 2: P2-03 Progress Observability (Medium)
 
-**Effort**: Medium | **Impact**: Medium | **Dependencies**: state-persistence (P1-02, complete)
+### What Already Exists
 
-### Architectural Complexity: LOW
+- **Checkpoint files already written**: Every agent in every skill writes structured YAML frontmatter to `docs/progress/{feature}-{role}.md`. The data is already being produced by all 3 skills.
+- **Standardized checkpoint format**: Identical across all skills -- `feature`, `team`, `agent`, `phase`, `status`, `last_action`, `updated`. Machine-parseable today.
+- **Summary files already written by convention**: Team leads write `docs/progress/{feature}-summary.md` (see `automated-testing-summary.md` as example -- structured with Summary, Files Created, Files Modified, Verification sections).
+- **Cost summaries already written**: `docs/progress/{skill}-{feature}-{timestamp}-cost-summary.md` produced by team leads.
+- **Progress template exists**: `docs/progress/_template.md` defines the expected structure.
+- **Validation pipeline extensible**: `scripts/validate.sh` runs 4 validators (10 checks). Adding a `progress-checkpoint.sh` validator is straightforward using the existing patterns from `roadmap-frontmatter.sh`.
 
-This is the simplest remaining item. It extends existing infrastructure rather than creating new abstractions.
+### What Needs to Be Built
 
-**Components required:**
-1. A "status" argument handler in each skill's "Determine Mode" section
-2. File-reading logic that aggregates checkpoint files from `docs/progress/`
-3. A summary output format (human-readable, optionally machine-parseable)
+1. **Status mode in "Determine Mode"**: Add a `status` argument handler to each SKILL.md (3 edits, ~15-20 lines each). The handler reads all `docs/progress/{feature}-*.md` files, parses YAML frontmatter, and generates a consolidated report. Key property: **no agent spawning** -- the team lead reads and summarizes alone.
+2. **Status report format**: Define a standard output structure:
+   ```
+   Feature: {name} | Team: {skill} | Phase: {overall}
+   Agents:
+     - {role}: {phase}/{status} -- {last_action} (updated: {timestamp})
+   Blockers: {list or "none"}
+   ```
+3. **End-of-session summary enforcement**: Formalize the existing convention that team leads write `{feature}-summary.md` on completion or interruption.
+4. **Optional checkpoint validator**: A `progress-checkpoint.sh` script following the pattern of `roadmap-frontmatter.sh` (C1 field validation). Low effort given the existing framework.
 
-**Interactions:**
-- Reads existing checkpoint files -- no new file formats needed
-- Does not spawn agents (the whole point is lightweight status checking)
-- Minimal changes to SKILL.md (add a mode to Determine Mode, add summarization logic)
+### Complexity Assessment
 
-### Risk Assessment: LOW
+The roadmap says **Medium**. This is accurate to generous. The work is:
+- 3 SKILL.md edits (add status mode)
+- 1 format definition (status report template)
+- 1 formalization of existing convention (summary file requirement)
+- 1 optional validator script
 
-1. **Checkpoint format dependency**: Relies on agents actually writing consistent checkpoint files. If checkpoint discipline is poor, the status view is unreliable. This is a people/process risk, not an architecture risk.
-2. **Stale data**: Checkpoint files are written by agents during execution. Between checkpoints, the status view may be out of date. This is inherent to a file-based state model and acceptable.
-3. **End-of-session summary**: Already partially implemented -- build-product's orchestration flow step 7 mentions writing to `{feature}-summary.md`. Formalizing this is low-risk.
+None of this requires new architectural patterns. It is purely additive, building on existing conventions and file formats. The checkpoint data already exists; this feature makes it consumable.
 
-### Implementation Readiness: HIGH
+### Architectural Risks
 
-The roadmap description is clear and complete. The checkpoint format already exists in all 3 SKILL.md files. The progress template exists (`docs/progress/_template.md`). The implementation is mostly additive -- a new mode in Determine Mode plus summarization instructions.
+1. **Stale data**: Between checkpoints, the status view may lag. Mitigation: timestamps in frontmatter let the reader detect staleness. This is inherent to file-based state and acceptable.
+2. **Format coupling**: Status reader depends on checkpoint format stability. Mitigation: format is already standardized across all 3 skills and validated by CI.
+3. **Minimal overall risk**: Read-only feature adding a new consumption path for existing data. No new write patterns, no concurrency concerns, no new state management.
 
-### Recommended Approach
+### Effort-to-Value: HIGH
 
-1. **Implement early** -- this is the lowest-risk, highest-readiness item.
-2. **Add `status` argument to all 3 skills**: `/plan-product status`, `/build-product status`, `/review-quality status`
-3. **No new SKILL.md file needed**: The status mode is a lightweight handler within each existing skill.
-4. **End-of-session summary**: Formalize the cost summary and team progress summary that team leads already write, ensuring they follow the progress template.
-
----
-
-## P2-04: Automated Testing Pipeline
-
-**Effort**: Large | **Impact**: High | **Dependencies**: None
-
-### Architectural Complexity: MEDIUM
-
-Introduces external tooling (scripts, CI) but the architecture is straightforward.
-
-**Components required:**
-1. A validation script (Node.js or Python) that parses SKILL.md and roadmap files
-2. Structural checks: YAML frontmatter, required sections, teammate name cross-references
-3. Consistency checks: Shared Principles and Communication Protocol match across skills
-4. CI configuration (GitHub Actions workflow)
-
-**Interactions:**
-- Operates on static markdown files -- no agent interaction, no Claude API needed
-- Validates structural contracts that are currently implicit (section names, frontmatter fields)
-- Cross-validates the 3 SKILL.md files against each other for consistency
-
-### Risk Assessment: LOW-MEDIUM
-
-1. **Brittle parsing**: Markdown is not a structured format. A validation script that parses section headers is fragile against formatting changes. The script must be tolerant of minor variations (extra blank lines, different heading levels).
-2. **Maintenance burden**: Every structural change to SKILL.md requires updating the validation script. If the tests are too strict, they become an impediment to iteration.
-3. **False sense of security**: Structural validation catches formatting errors but cannot validate behavioral correctness. An agent that follows the format but misunderstands the instructions will pass all tests.
-4. **Technology choice**: The project has no executable code today. Introducing a Node.js or Python script adds a runtime dependency and requires a `package.json` or `requirements.txt`.
-
-### Implementation Readiness: MEDIUM
-
-The roadmap description defines clear structural checks. However:
-- No decision on language (Node.js vs. Python vs. shell)
-- No decision on markdown parsing library
-- The "contract tests" (consistency between skills) need specific assertions defined
-- The P2-05 content deduplication outcome affects whether consistency tests check for identical content or shared file references
-
-### Recommended Approach
-
-1. **Implement after P2-05** -- if content is deduplicated, consistency checks become simpler (verify reference exists vs. verify identical content across 3 files).
-2. **Start with YAML frontmatter validation** -- this is the most structured, least brittle check.
-3. **Use a simple shell script with `yq`** for YAML validation, avoiding a full runtime dependency. Graduate to a proper language if checks grow complex.
-4. **GitHub Actions CI**: A single workflow file (`.github/workflows/validate.yml`) that runs on PRs touching `plugins/` or `docs/`.
-5. **Keep checks minimal initially**: Frontmatter validation, required section headers, cross-skill consistency for shared sections. Resist the urge to validate content semantics.
+Low-to-medium effort, medium impact, near-zero risk. Directly addresses the most common user frustration (waiting for multi-agent teams with no visibility into progress). Leverages nearly 100% of existing infrastructure.
 
 ---
 
-## P2-05: Content Deduplication
+## Candidate 3: P2-07 Universal Shared Principles (Medium)
 
-**Effort**: Medium | **Impact**: Medium | **Dependencies**: None
+### What Already Exists
 
-### Architectural Complexity: MEDIUM
+- **Shared content markers** (P2-05 complete): `<!-- BEGIN SHARED: principles -->` and `<!-- BEGIN SHARED: communication-protocol -->` in all 3 SKILL.md files.
+- **Authoritative source designation** (ADR-002): `plan-product/SKILL.md` is canonical, with authoritative source comments after every BEGIN marker.
+- **Automated drift detection** (P2-04 complete): `skill-shared-content.sh` validates B1 (byte-identity for principles), B2 (structural equivalence with skeptic name normalization for protocol), B3 (authoritative source comments). CI catches any drift automatically.
+- **SKILL-SPECIFIC markers**: Already exist for build-product's Contract Negotiation Pattern.
+- **ADR-002's 8-skill trigger**: Explicitly states "When the skill count exceeds 8, revisit this approach."
 
-Touches the core architectural decision of skill self-containment.
+### What Would Need to Be Built
 
-**Components required (Option A -- CLAUDE.md extraction):**
-1. Extract Shared Principles and Communication Protocol to `CLAUDE.md` or `plugins/conclave/shared/principles.md`
-2. Replace duplicated content in each SKILL.md with a brief reference note
-3. Verify Claude Code's context mechanism loads the shared file for all skill invocations
+1. **Extended marker catalog**: Identify additional shared content beyond principles and communication protocol. Candidates: checkpoint protocol (similar but with per-skill phase enum variants), write safety conventions (identical pattern, different role names), failure recovery (identical across all 3).
+2. **New markers and validators**: Add `<!-- BEGIN SHARED: checkpoint-protocol -->`, etc. Update `skill-shared-content.sh` to validate new blocks.
+3. **Normalization rules**: Checkpoint protocol has per-skill variations (phase values differ: `research | design | review | complete` vs. `planning | contract-negotiation | implementation | testing | review | complete`). Need normalization logic like the existing skeptic name handling.
+4. **Documentation**: Update ADR-002 or create ADR-003.
 
-**Components required (Option B -- Validated duplication):**
-1. Keep content duplicated in all 3 SKILL.md files
-2. Add a CI check (P2-04) that verifies the duplicated sections are byte-identical
+### Complexity Assessment
 
-### Risk Assessment: MEDIUM
+The roadmap says **Medium**. Technically Small-Medium, but the work has a **premature optimization** character:
 
-1. **CLAUDE.md loading behavior**: If shared content is moved to CLAUDE.md, it is loaded into every Claude Code conversation (not just skill invocations). This may add unnecessary context for non-skill interactions. Need to verify whether plugin-scoped CLAUDE.md files are supported.
-2. **Portability regression**: The current architecture is intentionally self-contained -- each SKILL.md works without external files. Option A breaks this. If a user copies a single SKILL.md to another project, it loses the shared principles.
-3. **Token cost impact**: The duplicated content is ~100 lines. With 5 agents reading the skill file, that's ~500 redundant reads per invocation. Deduplication saves tokens, but only if the shared file isn't also loaded redundantly.
-4. **Partial extraction risk**: If only some shared content is extracted, maintainers must remember which sections are shared vs. skill-specific. This creates a new category of consistency bug.
+- We have 3 skills. The existing drift detection (P2-05 markers + P2-04 CI) already catches inconsistencies automatically.
+- Adding more markers doesn't reduce duplication -- it just makes more of it trackable. Actual duplication reduction only comes at the 8-skill threshold per ADR-002.
+- The remaining shared content candidates (checkpoint, write safety, failure recovery) have more per-skill variation than principles/protocol, making byte-identity checks harder and requiring more normalization logic.
+- The marginal value over current state (2 shared blocks tracked) is low.
 
-### Implementation Readiness: MEDIUM
+### Architectural Risks
 
-The roadmap presents two clear options. The decision between them depends on:
-- Whether Claude Code supports plugin-scoped CLAUDE.md files (or only project-root CLAUDE.md)
-- Whether the self-containment principle is negotiable
-- Whether P2-04 testing infrastructure is available for Option B
+1. **Premature per ADR-002**: The architecture decision explicitly defers extraction until 8 skills. Expanding markers at 3 skills is incremental maintenance work, not architectural improvement.
+2. **Scope ambiguity**: The P2-07 roadmap file doesn't exist. The `_index.md` says "extending shared content pattern" but this is underspecified. Does it mean more markers? Shared file extraction? A principles file agents read at runtime?
+3. **Diminishing returns**: The highest-value shared content is already tracked. What remains has more per-skill variation, making synchronization validation more complex for less benefit.
 
-### Recommended Approach
+### Effort-to-Value: LOW-MEDIUM
 
-1. **Research Claude Code's CLAUDE.md loading behavior first** -- does it support plugin-scoped configuration files? This determines Option A feasibility.
-2. **Prefer Option B (validated duplication) initially** -- it preserves portability and is lower risk. The maintenance burden is manageable with CI enforcement from P2-04.
-3. **If Option A is feasible**, extract to a shared file within the plugin directory (`plugins/conclave/shared/`) rather than project-root CLAUDE.md, to avoid polluting non-skill conversations.
-4. **Implement after P2-04** -- Option B directly depends on having CI validation in place.
+Small-medium effort, low marginal value. The heavy lifting for content deduplication is done (P2-05 + P2-04). This item addresses a problem that isn't yet painful at 3 skills.
 
 ---
 
-## Recommended Implementation Order
+## Recommendation
 
-Based on dependencies, risk, and readiness:
+**Build P2-03 (Progress Observability) next.**
 
-| Priority | Item | Rationale |
-|----------|------|-----------|
-| 1st | **P2-03 Progress Observability** | Lowest complexity, highest readiness, no blockers. Provides immediate user value. |
-| 2nd | **P2-05 Content Deduplication** | Medium complexity, clears the path for P2-04 consistency checks. Requires research on CLAUDE.md loading. |
-| 3rd | **P2-04 Automated Testing** | Benefits from P2-05 outcome (simpler consistency checks). Introduces external tooling. |
-| 4th | **P2-02 Skill Composability** | Highest complexity and risk. Benefits from all prior P2 items. Requires platform research before speccing. |
+| Factor | P2-02 Composability | P2-03 Observability | P2-07 Shared Principles |
+|--------|--------------------|--------------------|------------------------|
+| Existing infra leveraged | Partial | ~100% | Mostly |
+| New components | Significant | Minimal | Small |
+| Effort estimate accuracy | Large, possibly under | Medium, possibly over | Medium, technically small |
+| Architectural risk | HIGH (showstopper possible) | NEAR-ZERO | LOW |
+| User value | Medium (power users) | Medium (all users) | Low (dev convenience) |
+| **Effort-to-value** | **LOW** | **HIGH** | **LOW-MEDIUM** |
 
-### Dependency Graph
+P2-03 is the clear winner: lowest risk, highest readiness, leverages existing checkpoint infrastructure, and addresses a real user pain point (no visibility during agent execution). Can likely be specced and built in a single plan+build cycle.
 
-```
-P2-03 (Observability) ─────────────────────────────────┐
-                                                        v
-P2-05 (Deduplication) ──> P2-04 (Testing) ──> P2-02 (Composability)
-```
-
-P2-03 is independent and should start immediately. P2-05 informs P2-04 design. P2-02 benefits from all three.
-
-### Key Research Questions (Must Answer Before Speccing)
-
-1. **For P2-02**: Can a Claude Code skill programmatically invoke another skill? What is the invocation mechanism?
-2. **For P2-05**: Does Claude Code support plugin-scoped CLAUDE.md or shared configuration files? How is context loaded for plugin skills vs. general conversations?
-3. **For P2-04**: What is the project's preferred scripting language for tooling? (No runtime dependencies exist today.)
+P2-02 should be deferred until platform research answers the skill-to-skill invocation question. P2-07 should wait until the skill count approaches the 8-skill threshold defined in ADR-002.

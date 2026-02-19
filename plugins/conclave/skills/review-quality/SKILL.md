@@ -3,7 +3,7 @@ name: review-quality
 description: >
   Invoke the Quality & Operations Team for security audits, performance
   analysis, deployment readiness, or regression testing.
-argument-hint: "[--light] [security <scope> | performance <scope> | deploy <feature> | regression]"
+argument-hint: "[--light] [status | security <scope> | performance <scope> | deploy <feature> | regression]"
 ---
 
 # Quality & Operations Team Orchestration
@@ -70,6 +70,7 @@ The QA Lead reads checkpoint files to understand team state during recovery.
 ## Determine Mode
 
 Based on $ARGUMENTS:
+- **"status"**: Read all checkpoint files for this skill and generate a consolidated status report. Do NOT spawn any agents. Read `docs/progress/` files with `team: "review-quality"` in their frontmatter, parse their YAML metadata, and output a formatted status summary. If no checkpoint files exist for this skill, report "No active or recent sessions found."
 - **Empty/no args**: First, scan `docs/progress/` for checkpoint files with `team: "review-quality"` and `status` of `in_progress`, `blocked`, or `awaiting_review`. If found, **resume from the last checkpoint** — re-spawn the relevant agents with their checkpoint content as context. If no incomplete checkpoints exist, perform a general quality assessment of the most recently implemented feature. Spawn test-eng + ops-skeptic. Check `docs/progress/` for the latest completed implementation.
 - **"security [scope]"**: Security audit of a feature or module. Spawn security-auditor + ops-skeptic.
 - **"performance [scope]"**: Performance analysis and load testing plan. Spawn test-eng + ops-skeptic.
@@ -130,6 +131,7 @@ All outputs must pass the Ops Skeptic before being considered final.
 6. Each agent writes their findings to `docs/progress/{feature}-{role}.md` (their own role-scoped file)
 7. **QA Lead only**: Synthesize all approved findings into `docs/progress/{feature}-quality.md`
 8. **QA Lead only**: Write cost summary to `docs/progress/{skill}-{feature}-{timestamp}-cost-summary.md`
+9. **QA Lead only**: Write end-of-session summary to `docs/progress/{feature}-summary.md` using the format from `docs/progress/_template.md`. Include: what was accomplished, what remains, blockers encountered, and whether the feature is complete or in-progress. If the session is interrupted before completion, still write a partial summary noting the interruption point.
 
 ## Critical Rules
 

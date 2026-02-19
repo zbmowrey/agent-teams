@@ -25,6 +25,7 @@ run_validator "skill-structure.sh"
 run_validator "skill-shared-content.sh"
 run_validator "roadmap-frontmatter.sh"
 run_validator "spec-frontmatter.sh"
+run_validator "progress-checkpoint.sh"
 
 printf '%s\n' "$output"
 
