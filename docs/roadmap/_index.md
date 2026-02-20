@@ -89,7 +89,7 @@ Items are prioritized using two dimensions:
 | 20 | [Sales Planning Skill](P3-10-plan-sales.md) | business-skills | ✅ | Medium |
 | 21 | [Marketing Planning Skill](P3-11-plan-marketing.md) | business-skills | 🔴 | Medium |
 | 22 | [Finance Planning Skill](P3-12-plan-finance.md) | business-skills | 🔴 | Medium-Large |
-| 23 | [Hiring Planning Skill](P3-14-plan-hiring.md) | business-skills | 🔴 | Medium |
+| 23 | [Hiring Planning Skill](P3-14-plan-hiring.md) | business-skills | ✅ | Medium |
 | 24 | [Customer Success Skill](P3-15-plan-customer-success.md) | business-skills | 🔴 | Medium |
 | 25 | [Sales Collateral Skill](P3-16-build-sales-collateral.md) | business-skills | 🔴 | Medium |
 | 26 | [Content Production Skill](P3-17-build-content.md) | business-skills | 🔴 | Medium |

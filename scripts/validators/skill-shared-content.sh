@@ -61,7 +61,11 @@ normalize_skeptic_names() {
         -e 's/Accuracy Skeptic/SKEPTIC_NAME/g' \
         -e 's/Narrative Skeptic/SKEPTIC_NAME/g' \
         -e 's/strategy-skeptic/SKEPTIC_NAME/g' \
-        -e 's/Strategy Skeptic/SKEPTIC_NAME/g'
+        -e 's/Strategy Skeptic/SKEPTIC_NAME/g' \
+        -e 's/bias-skeptic/SKEPTIC_NAME/g' \
+        -e 's/Bias Skeptic/SKEPTIC_NAME/g' \
+        -e 's/fit-skeptic/SKEPTIC_NAME/g' \
+        -e 's/Fit Skeptic/SKEPTIC_NAME/g'
 }
 
 # Build lookup of single-agent skill files (skip shared content checks for these)

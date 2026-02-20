@@ -20,7 +20,7 @@ All skills currently live in a single `conclave` plugin. As the skill count grow
 
 Defer until 2+ business skills are built and validated. Real-world skill structure should inform plugin boundaries.
 
-Current status: 1/2 business skills complete (`/draft-investor-update`). Second business skill (P3-10 `/plan-sales`) selected as next feature.
+Current status: 2/2 business skills complete (`/draft-investor-update` + `/plan-sales`). Prerequisite met as of 2026-02-19.
 
 ## Proposed Solution
 
