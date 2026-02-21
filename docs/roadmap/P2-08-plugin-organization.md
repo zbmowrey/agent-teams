@@ -5,7 +5,7 @@ priority: "P2"
 category: "core-framework"
 effort: "medium"
 impact: "medium"
-dependencies: []
+dependencies: ["universal-shared-principles"]
 created: "2026-02-19"
 updated: "2026-02-19"
 ---

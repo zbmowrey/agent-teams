@@ -16,7 +16,7 @@ updated: "2026-02-19"
 
 The shared content system (HTML markers + CI drift validator from P2-05) works well for keeping Shared Principles and Communication Protocol in sync across skills. However, each multi-agent SKILL.md carries a full copy of these sections. As the skill count grows, editing shared content requires updating every multi-agent SKILL.md file.
 
-Currently 6 multi-agent skills carry shared content (7 total skills including 1 single-agent). ADR-002 sets the extraction threshold at 8 skills.
+Currently 6 multi-agent skills carry shared content (7 total skills including 1 single-agent). Per ADR-002: "When the skill count exceeds 8, revisit this approach." Exceeds means >8 — the trigger fires at the 9th skill.
 
 ## Proposed Solution
 
@@ -24,7 +24,7 @@ Extract shared principles and communication protocol into authoritative source f
 
 ## Trigger Condition
 
-Per ADR-002: "When the skill count exceeds 8, revisit this approach." Current count: 7 total skills, 6 multi-agent skills with shared content. One more multi-agent skill triggers the threshold.
+Per ADR-002: "When the skill count exceeds 8, revisit this approach." Exceeds means >8, so the formal trigger fires at the 9th skill. Current count: 7 total skills, 6 multi-agent skills with shared content. Pre-planning at 7 is prudent per RC5/RC7/RC8 recommendations to design the extraction mechanism ahead of the trigger.
 
 ## Success Criteria
 
