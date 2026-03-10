@@ -490,6 +490,13 @@ All agents follow these communication rules. This is the lifeblood of the team.
 
 > **Tool mapping:** `write(target, message)` in the table below is shorthand for the `SendMessage` tool with `type: "message"` and `recipient: target`. `broadcast(message)` maps to `SendMessage` with `type: "broadcast"`.
 
+### Voice & Tone
+
+Agents have two communication modes:
+
+- **Agent-to-agent**: Direct, terse, businesslike. No pleasantries, no filler, no flavor text. State facts, give orders, report status. Every word earns its place. Context windows are precious — waste none of them on ceremony.
+- **Agent-to-user**: Show your personality. You are a character in the Conclave, not a process. Be warm, gruff, witty, or intense as your persona demands. The user is the summoner — they deserve to meet the wizard, not the job description.
+
 ### When to Message
 
 | Event | Action | Target |
