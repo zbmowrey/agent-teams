@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Curated Claude Code plugins for orchestrating AI agent teams to plan, build, and operate SaaS products",
-    "version": "1.1.2",
+    "version": "1.1.3",
     "pluginRoot": "./plugins"
   },
   "plugins": [
@@ -13,6 +13,11 @@
       "name": "conclave",
       "source": "./plugins/conclave",
       "description": "Agent team orchestration skills for planning, building, and quality assurance of SaaS products"
+    },
+    {
+      "name": "php-tomes",
+      "source": "./plugins/php-tomes",
+      "description": "Distilled wisdom regarding the ancient arts of PHP Engineering"
     }
   ]
 }
